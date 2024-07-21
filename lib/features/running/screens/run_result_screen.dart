@@ -11,7 +11,7 @@ class RunResultScreen extends StatefulWidget {
 }
 
 class _RunResultScreenState extends State<RunResultScreen> {
-  double _runningIntensity = 5.0; // 초기값 설정
+  double _runningIntensity = 5.0;
 
   @override
   Widget build(BuildContext context) {

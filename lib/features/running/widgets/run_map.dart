@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:mapbox_gl/mapbox_gl.dart';
-import 'package:new_runaway/config/mapbox_config.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:new_runaway/config/google_maps_config.dart';
 
 class RunMap extends StatelessWidget {
   final List<LatLng> routePoints;
@@ -9,29 +9,23 @@ class RunMap extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MapboxMap(
-      accessToken: MapboxConfig.accessToken,
-      styleString: MapboxConfig.styleUrl,
+    print('Building RunMap widget');
+    print('Route points: $routePoints');
+    return GoogleMap(
       initialCameraPosition: CameraPosition(
-        target: routePoints.isNotEmpty ? routePoints.last : LatLng(0, 0),
+        target: routePoints.isNotEmpty ? routePoints.last : LatLng(37.5665, 126.9780),
         zoom: 15.0,
       ),
-      onMapCreated: (MapboxMapController controller) {
-        controller.addLine(
-          LineOptions(
-            geometry: routePoints,
-            lineColor: "#3887be",
-            lineWidth: 5.0,
-          ),
-        );
+      polylines: {
+        Polyline(
+          polylineId: PolylineId('route'),
+          points: routePoints,
+          color: Colors.red,
+          width: 4,
+        ),
       },
-      myLocationEnabled: false,
-      compassEnabled: false,
-      zoomGesturesEnabled: false,
-      rotateGesturesEnabled: false,
-      tiltGesturesEnabled: false,
-      scrollGesturesEnabled: false,
-      doubleClickZoomEnabled: false,
+      myLocationEnabled: true,
+      myLocationButtonEnabled: true,
     );
   }
 }

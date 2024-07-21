@@ -1,5 +1,5 @@
-import 'package:runaway/services/api_service.dart';
-import 'package:runaway/models/user.dart';
+import 'package:new_runaway/services/api_service.dart';
+import 'package:new_runaway/models/user.dart';
 
 class AuthService {
   final ApiService _apiService = ApiService();

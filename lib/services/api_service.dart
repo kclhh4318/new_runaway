@@ -1,6 +1,6 @@
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'package:runaway/config/app_config.dart';
+import 'package:new_runaway/config/app_config.dart';
 
 class ApiService {
   final String baseUrl = AppConfig.apiBaseUrl;
