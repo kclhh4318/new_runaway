@@ -11,7 +11,7 @@ class RunResultScreen extends StatefulWidget {
 }
 
 class _RunResultScreenState extends State<RunResultScreen> {
-  double _runningIntensity = 5.0;
+  int _runningIntensity = 5;
 
   @override
   Widget build(BuildContext context) {
@@ -66,17 +66,47 @@ class _RunResultScreenState extends State<RunResultScreen> {
         children: [
           const Text('러닝 강도', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
-          Slider(
-            value: _runningIntensity,
-            min: 1,
-            max: 10,
-            divisions: 9,
-            label: _runningIntensity.toString(),
-            onChanged: (double value) {
+          GestureDetector(
+            onTapUp: (details) {
+              RenderBox box = context.findRenderObject() as RenderBox;
+              double localDx = box.globalToLocal(details.globalPosition).dx;
+              int newIntensity = ((localDx / box.size.width) * 10).round();
+              if (newIntensity < 1) newIntensity = 1;
+              if (newIntensity > 10) newIntensity = 10;
               setState(() {
-                _runningIntensity = value;
+                _runningIntensity = newIntensity;
               });
             },
+            child: Container(
+              height: 100, // 막대의 높이를 늘려 직사각형으로 만듦
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(10),
+                color: Colors.grey[300],
+              ),
+              child: Stack(
+                children: [
+                  FractionallySizedBox(
+                    widthFactor: _runningIntensity / 10,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(10),
+                        color: _runningIntensity == 10 ? Color(0xFFFF5200) : Colors.blue,
+                      ),
+                    ),
+                  ),
+                  Center(
+                    child: Text(
+                      _runningIntensity.toString(),
+                      style: TextStyle(
+                        color: Colors.black,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 24, // 글자 크기를 키움
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
         ],
       ),
