@@ -28,7 +28,7 @@ class _LoginSignupContentState extends State<LoginSignupContent> {
                 const Text(
                   "Runaway",
                   style: TextStyle(
-                    fontSize: 70,
+                    fontSize: 55,
                     fontWeight: FontWeight.bold,
                     fontFamily: 'Giants',
                     fontStyle: FontStyle.italic, // Inline 스타일 적용

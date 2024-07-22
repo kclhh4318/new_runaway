@@ -86,7 +86,7 @@ class _StatsScreenState extends State<StatsScreen> {
               Text(
                 '99,999',
                 style: TextStyle(
-                  fontSize: 36,
+                  fontSize: 42,
                   fontWeight: FontWeight.bold,
                   fontFamily: 'Giants',
                   fontStyle: FontStyle.italic,
@@ -114,7 +114,7 @@ class _StatsScreenState extends State<StatsScreen> {
           Text(
             '999:99',
             style: TextStyle(
-              fontSize: 36,
+              fontSize: 42,
               fontWeight: FontWeight.bold,
               fontFamily: 'Giants',
               fontStyle: FontStyle.italic,
@@ -169,7 +169,8 @@ class _StatsScreenState extends State<StatsScreen> {
         ],
       ),
     );
-  }
+
+}
 
 
   Widget _buildDateFilter() {
@@ -275,25 +276,67 @@ class _StatsScreenState extends State<StatsScreen> {
       margin: EdgeInsets.only(bottom: 10),
       padding: EdgeInsets.all(10),
       decoration: BoxDecoration(
-        color: Colors.grey[200],
-        borderRadius: BorderRadius.circular(10),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(15),
+        boxShadow: const [
+          BoxShadow(
+            color: Colors.black26,
+            blurRadius: 10,
+            offset: Offset(0, 4),
+          ),
+        ],
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(date, style: TextStyle(fontWeight: FontWeight.bold)),
-              Text(distance),
-            ],
+          // 컨테이너는 코스이미지로 추후에 대체
+          Container(
+            width: 100,
+            height: 100,
+            decoration: BoxDecoration(
+              color: Colors.grey[300],
+              borderRadius: BorderRadius.circular(10),
+            ),
           ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(time),
-              Text('평균 페이스 $pace'),
-            ],
+          SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(date, style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
+                SizedBox(height: 5),
+                Text('총 킬로미터', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                Text(
+                  distance,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 19,
+                    fontFamily: 'Giants',
+                    height: 1.2, // 위아래 자간 설정
+                  ),
+                ),
+                SizedBox(height: 5),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('시간', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                        Text(time, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, height: 1.2,))
+                      ],
+                    ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('평균 페이스', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                        Text(pace, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, height: 1.2)),
+                      ],
+                    ),
+                    SizedBox(width: 13), // 평균 페이스를 왼쪽으로 이동시키기 위해 간격 조정
+                  ],
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -311,7 +354,7 @@ class _StatsScreenState extends State<StatsScreen> {
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Row(
-              children: List.generate(5, (index) => _buildCourseItem()),
+              children: List.generate(5, (index) => _buildCourseItem(index)),
             ),
           ),
         ],
@@ -319,16 +362,30 @@ class _StatsScreenState extends State<StatsScreen> {
     );
   }
 
-  Widget _buildCourseItem() {
-    return Container(
-      width: 100,
-      height: 100,
-      margin: EdgeInsets.only(right: 10),
-      decoration: BoxDecoration(
-        color: Colors.grey[300],
-        borderRadius: BorderRadius.circular(10),
+  Widget _buildCourseItem(int index) {
+    return Padding(
+      padding: const EdgeInsets.only(right: 10.0),
+      child: Column(
+        children: [
+          Container(
+            width: 100,
+            height: 100,
+            decoration: BoxDecoration(
+              color: Colors.grey[300],
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+          SizedBox(height: 5),
+          Text(
+            // '${index + 1}234명', // 이 텍스트는 각 항목에 고유한 인덱스를 추가하여 다르게 표시할 수 있습니다.
+            '1111명',
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.normal,
+            ),
+          ),
+        ],
       ),
-      child: Center(child: Text('코스')),
     );
   }
 
