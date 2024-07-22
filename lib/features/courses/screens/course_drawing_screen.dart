@@ -3,6 +3,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:new_runaway/features/courses/course_provider.dart';
 import 'package:geolocator/geolocator.dart';
+import 'dart:ui' as ui;
 
 class CourseDrawingScreen extends StatefulWidget {
   const CourseDrawingScreen({Key? key}) : super(key: key);
@@ -18,6 +19,7 @@ class _CourseDrawingScreenState extends State<CourseDrawingScreen> {
   bool _isDrawingMode = false;
   List<Widget> _nearbyCourseThumbnails = [];
   LatLng? _currentLocation;
+  List<Offset> _sketchPoints = [];
 
   @override
   void initState() {
@@ -79,12 +81,17 @@ class _CourseDrawingScreenState extends State<CourseDrawingScreen> {
             polylines: _polylines,
             myLocationEnabled: true,
             myLocationButtonEnabled: true,
-            onTap: _isDrawingMode ? _addPoint : null,
           ),
           if (_isDrawingMode)
-            Container(
-              color: Colors.white.withOpacity(0.3),
-              child: Center(child: Text('드로잉 모드')),
+            GestureDetector(
+              onPanUpdate: _onPanUpdate,
+              onPanEnd: _onPanEnd,
+              child: CustomPaint(
+                painter: SketchPainter(_sketchPoints),
+                child: Container(
+                  color: Colors.transparent,
+                ),
+              ),
             ),
           Positioned(
             bottom: 16,
@@ -126,27 +133,30 @@ class _CourseDrawingScreenState extends State<CourseDrawingScreen> {
     );
   }
 
-  void _toggleDrawingMode() {
+  void _onPanUpdate(DragUpdateDetails details) {
     setState(() {
-      _isDrawingMode = !_isDrawingMode;
-      if (!_isDrawingMode) {
-        _updatePolyline();
-      }
+      RenderBox renderBox = context.findRenderObject() as RenderBox;
+      _sketchPoints.add(renderBox.globalToLocal(details.globalPosition));
     });
   }
 
-  void _addPoint(LatLng point) {
-    setState(() {
-      _points.add(point);
-      _updatePolyline();
-    });
+  void _onPanEnd(DragEndDetails details) {
+    _convertSketchToLatLng();
   }
 
-  void _clearDrawing() {
-    setState(() {
-      _points.clear();
-      _updatePolyline();
-    });
+  void _convertSketchToLatLng() {
+    if (_mapController == null) return;
+
+    _points.clear();
+    for (Offset point in _sketchPoints) {
+      _mapController!.getLatLng(ScreenCoordinate(
+        x: point.dx.toInt(),
+        y: point.dy.toInt(),
+      )).then((LatLng latlng) {
+        _points.add(latlng);
+      });
+    }
+    _updatePolyline();
   }
 
   void _updatePolyline() {
@@ -159,9 +169,47 @@ class _CourseDrawingScreenState extends State<CourseDrawingScreen> {
     ));
   }
 
-  void _finishDrawing() {
+  void _toggleDrawingMode() {
+    setState(() {
+      _isDrawingMode = !_isDrawingMode;
+      if (!_isDrawingMode) {
+        _convertSketchToLatLng();
+      }
+    });
+  }
+
+  void _clearDrawing() {
+    setState(() {
+      _sketchPoints.clear();
+      _points.clear();
+      _updatePolyline();
+    });
+  }
+
+  Future<void> _finishDrawing() async {
     final courseProvider = Provider.of<CourseProvider>(context, listen: false);
     courseProvider.analyzeAndRecommendCourse(_points);
     Navigator.pushNamed(context, '/course_analysis_result');
   }
+}
+
+class SketchPainter extends CustomPainter {
+  final List<Offset> points;
+
+  SketchPainter(this.points);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    Paint paint = Paint()
+      ..color = Colors.black
+      ..strokeCap = StrokeCap.round
+      ..strokeWidth = 4.0;
+
+    for (int i = 0; i < points.length - 1; i++) {
+      canvas.drawLine(points[i], points[i + 1], paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(SketchPainter oldDelegate) => true;
 }
