@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:new_runaway/features/courses/screens/course_drawing_screen.dart';
 import 'package:new_runaway/features/running/screens/running_session_screen.dart';
 import 'package:new_runaway/features/stats/widgets/period_selector.dart';
 import 'package:new_runaway/features/stats/widgets/stats_bar_chart.dart';
+import 'package:new_runaway/features/running/running_provider.dart';
 
 class StatsScreen extends StatefulWidget {
   const StatsScreen({Key? key}) : super(key: key);
@@ -30,6 +32,7 @@ class _StatsScreenState extends State<StatsScreen> {
       setState(() => _showRunningButtons = true);
     }
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -255,41 +258,60 @@ class _StatsScreenState extends State<StatsScreen> {
   }
 
   Widget _buildRunningButtons() {
-    return Positioned(
-      bottom: 20,
-      left: 20,
-      right: 20,
-      child: AnimatedOpacity(
-        opacity: _showRunningButtons ? 1.0 : 0.0,
-        duration: Duration(milliseconds: 200),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            ElevatedButton.icon(
-              icon: Icon(Icons.edit),
-              label: Text('코스 그리기'),
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => CourseDrawingScreen()),
-                );
-              },
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
+    return Consumer<RunningProvider>(
+      builder: (context, runningProvider, child) {
+        return Positioned(
+          bottom: 20,
+          left: 20,
+          right: 20,
+          child: AnimatedOpacity(
+            opacity: _showRunningButtons ? 1.0 : 0.0,
+            duration: Duration(milliseconds: 200),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                if (runningProvider.isRunning)
+                  ElevatedButton.icon(
+                    icon: Icon(Icons.directions_run),
+                    label: Text('진행 중인 러닝'),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => RunningSessionScreen(showCountdown: false)),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+                  )
+                else
+                  ...[
+                    ElevatedButton.icon(
+                      icon: Icon(Icons.edit),
+                      label: Text('코스 그리기'),
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => CourseDrawingScreen()),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
+                    ),
+                    ElevatedButton.icon(
+                      icon: Icon(Icons.directions_run),
+                      label: Text('러닝 시작'),
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => RunningSessionScreen()),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
+                    ),
+                  ],
+              ],
             ),
-            ElevatedButton.icon(
-              icon: Icon(Icons.directions_run),
-              label: Text('러닝 시작'),
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => RunningSessionScreen()),
-                );
-              },
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
-            ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 }

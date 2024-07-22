@@ -4,8 +4,13 @@ import 'package:new_runaway/config/google_maps_config.dart';
 
 class RunMap extends StatelessWidget {
   final List<LatLng> routePoints;
+  final List<LatLng>? initialRoute;
 
-  const RunMap({Key? key, required this.routePoints}) : super(key: key);
+  const RunMap({
+    Key? key,
+    required this.routePoints,
+    this.initialRoute,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -23,6 +28,13 @@ class RunMap extends StatelessWidget {
           color: Colors.red,
           width: 4,
         ),
+        if (initialRoute != null)
+          Polyline(
+            polylineId: PolylineId('initial_route'),
+            points: initialRoute!,
+            color: Colors.blue,
+            width: 4,
+          ),
       },
       myLocationEnabled: true,
       myLocationButtonEnabled: true,

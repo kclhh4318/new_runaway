@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart' show LatLng;
 
-
 class RunningProvider with ChangeNotifier {
   bool _isRunning = false;
   int _seconds = 0;
@@ -11,6 +10,13 @@ class RunningProvider with ChangeNotifier {
   double _avgPace = 0.0;
   double _currentPace = 0.0;
   List<LatLng> _routePoints = [];
+
+  List<LatLng> get routePoints => _routePoints;
+
+  void setInitialRoute(List<LatLng> initialRoute) {
+    _routePoints = List.from(initialRoute);
+    notifyListeners();
+  }
 
   Timer? _timer;
   StreamSubscription<Position>? _positionStream;
@@ -20,33 +26,50 @@ class RunningProvider with ChangeNotifier {
   double get distance => _distance;
   double get avgPace => _avgPace;
   double get currentPace => _currentPace;
-  List<LatLng> get routePoints => _routePoints;
+
+  void resetSession() {
+    _isRunning = false;
+    _seconds = 0;
+    _distance = 0.0;
+    _avgPace = 0.0;
+    _currentPace = 0.0;
+    _routePoints = [];
+    _timer?.cancel();
+    _positionStream?.cancel();
+    notifyListeners();
+  }
 
   Future<void> startRunning() async {
-    bool serviceEnabled;
-    LocationPermission permission;
+    if (_isRunning) return;
 
-    serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
-      return Future.error('Location services are disabled.');
-    }
+    resetSession();
 
-    permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) {
-        return Future.error('Location permissions are denied');
+    try {
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        throw Exception('Location services are disabled.');
       }
-    }
 
-    if (permission == LocationPermission.deniedForever) {
-      return Future.error('Location permissions are permanently denied, we cannot request permissions.');
-    }
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          throw Exception('Location permissions are denied');
+        }
+      }
 
-    _isRunning = true;
-    _startTimer();
-    _startLocationTracking();
-    notifyListeners();
+      if (permission == LocationPermission.deniedForever) {
+        throw Exception('Location permissions are permanently denied');
+      }
+
+      _isRunning = true;
+      _startTimer();
+      _startLocationTracking();
+      notifyListeners();
+    } catch (e) {
+      print('Error starting running session: $e');
+      resetSession();
+    }
   }
 
   void pauseRunning() {
@@ -80,7 +103,7 @@ class RunningProvider with ChangeNotifier {
 
   void _startLocationTracking() {
     _positionStream = Geolocator.getPositionStream(
-      locationSettings: LocationSettings(
+      locationSettings: const LocationSettings(
         accuracy: LocationAccuracy.high,
         distanceFilter: 5,
       ),
@@ -92,7 +115,7 @@ class RunningProvider with ChangeNotifier {
           lastPoint.latitude, lastPoint.longitude,
           newPoint.latitude, newPoint.longitude,
         );
-        _distance += distance / 1000; // Convert to km
+        _distance += distance / 1000;
       }
       _routePoints.add(LatLng(position.latitude, position.longitude));
       _updatePace();
@@ -117,10 +140,11 @@ class RunningProvider with ChangeNotifier {
     }
   }
 
-  String _formatPace(double pace) {
+  String formatPace(double pace) {
     final paceInSeconds = pace.toInt();
     final minutes = paceInSeconds ~/ 60;
     final remainingSeconds = paceInSeconds % 60;
     return '${minutes.toString().padLeft(2, '0')}:${remainingSeconds.toString().padLeft(2, '0')}';
   }
 }
+
