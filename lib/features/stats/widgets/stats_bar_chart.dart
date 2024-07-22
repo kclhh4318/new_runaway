@@ -57,7 +57,10 @@ class StatsBarChart extends StatelessWidget {
               showTitles: true,
               getTitlesWidget: (value, meta) {
                 if (value % interval == 0) {
-                  return Text('${value.toInt()}km');
+                  return Text(
+                    '${value.toInt()}km',
+                    style: TextStyle(fontSize: 8),
+                  );
                 }
                 return Text('');
               },
