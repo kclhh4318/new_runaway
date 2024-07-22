@@ -44,11 +44,10 @@ class CourseProvider extends ChangeNotifier {
 
       final recommendation = await _openAIService.getRecommendedCourse(prompt);
       _recommendedCourse = _parseRecommendation(recommendation);
-      _totalDistance = _recommendedCourse!.distance;
+      _totalDistance = _calculateDistance(_recommendedCourse!.points);
       notifyListeners();
     } catch (e) {
       print('Error analyzing and recommending course: $e');
-      // 에러 발생 시 기본 코스 생성
       _recommendedCourse = _createDefaultCourse(drawnPoints);
       _totalDistance = _calculateDistance(drawnPoints);
       notifyListeners();

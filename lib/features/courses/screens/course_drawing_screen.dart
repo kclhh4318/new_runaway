@@ -18,7 +18,8 @@ class _CourseDrawingScreenState extends State<CourseDrawingScreen> {
   bool _isDrawingMode = false;
   List<Widget> _nearbyCourseThumbnails = [];
   LatLng? _currentLocation;
-  List<Offset> _sketchPoints = [];
+  List<Offset> _sketchPoints = []; // 타입 변경
+  LatLngBounds? _lastBounds; // 새로운 변수 추가
 
   @override
   void initState() {
@@ -130,12 +131,19 @@ class _CourseDrawingScreenState extends State<CourseDrawingScreen> {
     );
   }
 
-  void _onPanUpdate(DragUpdateDetails details) {
+  void _onPanUpdate(DragUpdateDetails details) async {
+    if (_mapController == null) return;
+    RenderBox renderBox = context.findRenderObject() as RenderBox;
+    Offset localPosition = renderBox.globalToLocal(details.localPosition);
+
     setState(() {
-      RenderBox renderBox = context.findRenderObject() as RenderBox;
-      Offset localPosition = renderBox.globalToLocal(details.localPosition);
       _sketchPoints.add(localPosition);
     });
+
+    // 매 업데이트마다 bounds를 가져오지 않고, 주기적으로 업데이트
+    if (_lastBounds == null || _sketchPoints.length % 10 == 0) {
+      _lastBounds = await _mapController!.getVisibleRegion();
+    }
   }
 
   void _onPanEnd(DragEndDetails details) {
@@ -161,21 +169,23 @@ class _CourseDrawingScreenState extends State<CourseDrawingScreen> {
     });
   }
 
-  void _convertSketchToLatLng() {
-    if (_mapController == null) return;
+  void _convertSketchToLatLng() async {
+    if (_lastBounds == null) return;
 
     _points.clear();
-    for (Offset point in _sketchPoints) {
-      _mapController!.getLatLng(ScreenCoordinate(
-        x: point.dx.toInt(),
-        y: point.dy.toInt(),
-      )).then((LatLng latlng) {
-        setState(() {
-          _points.add(latlng);
-          _updatePolyline();
-        });
-      });
+    for (var point in _sketchPoints) {
+      double percentageX = point.dx / context.size!.width;
+      double percentageY = point.dy / context.size!.height;
+
+      double lngDiff = _lastBounds!.northeast.longitude - _lastBounds!.southwest.longitude;
+      double latDiff = _lastBounds!.northeast.latitude - _lastBounds!.southwest.latitude;
+
+      double longitude = _lastBounds!.southwest.longitude + (lngDiff * percentageX);
+      double latitude = _lastBounds!.northeast.latitude - (latDiff * percentageY);
+
+      _points.add(LatLng(latitude, longitude));
     }
+    _updatePolyline();
   }
 
   void _updatePolyline() {
@@ -188,10 +198,10 @@ class _CourseDrawingScreenState extends State<CourseDrawingScreen> {
     ));
   }
 
-  Future<void> _finishDrawing() async {
+  void _finishDrawing() {
     _convertSketchToLatLng();
     final courseProvider = Provider.of<CourseProvider>(context, listen: false);
-    await courseProvider.analyzeAndRecommendCourse(_points);
+    courseProvider.analyzeAndRecommendCourse(_points);
     Navigator.pushNamed(context, '/course_analysis_result');
   }
 }
