@@ -120,6 +120,52 @@ class _StatsScreenState extends State<StatsScreen> {
               fontStyle: FontStyle.italic,
             ),
           ),
+          SizedBox(height: 16), // 총 시간과 추가 정보 사이의 간격
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '평균 페이스',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                  Text(
+                    '05:30',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                ],
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '평균 거리',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                  Text(
+                    '05 km',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                ],
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '총 런닝 횟수',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                  Text(
+                    '959 회',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                ],
+              ),
+            ],
+          ),
+
         ],
       ),
     );
@@ -215,7 +261,7 @@ class _StatsScreenState extends State<StatsScreen> {
               ),
             ],
           ),
-          SizedBox(height: 10),
+          SizedBox(height: 5),
           _buildRecentRunItem('24.07.19', '8.11 km', '1:35:18', '05:30'),
           _buildRecentRunItem('24.07.18', '6.5 km', '1:15:30', '05:45'),
           _buildRecentRunItem('24.07.17', '10.2 km', '1:55:40', '05:20'),
