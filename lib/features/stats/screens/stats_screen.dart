@@ -86,7 +86,7 @@ class _StatsScreenState extends State<StatsScreen> {
               Text(
                 '99,999',
                 style: TextStyle(
-                  fontSize: 36,
+                  fontSize: 42,
                   fontWeight: FontWeight.bold,
                   fontFamily: 'Giants',
                   fontStyle: FontStyle.italic,
@@ -114,7 +114,7 @@ class _StatsScreenState extends State<StatsScreen> {
           Text(
             '999:99',
             style: TextStyle(
-              fontSize: 36,
+              fontSize: 42,
               fontWeight: FontWeight.bold,
               fontFamily: 'Giants',
               fontStyle: FontStyle.italic,
