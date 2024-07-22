@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:new_runaway/features/stats/screens/stats_screen.dart';
+import 'package:new_runaway/services/auth_service.dart';
 
 class LoginSignupContent extends StatefulWidget {
   const LoginSignupContent({Key? key}) : super(key: key);
@@ -9,6 +10,7 @@ class LoginSignupContent extends StatefulWidget {
 }
 
 class _LoginSignupContentState extends State<LoginSignupContent> {
+  final AuthService _authService = AuthService();
   final _formKey = GlobalKey<FormState>();
   String _username = '';
   String _password = '';
@@ -104,16 +106,33 @@ class _LoginSignupContentState extends State<LoginSignupContent> {
     );
   }
 
-  void _submit() {
+  void _submit() async {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
-      // 로그인 또는 회원가입 로직 구현 (서버 연동 전까지는 생략)
-      print('Username: $_username, Password: $_password, Mode: ${_isLogin ? "Login" : "Sign Up"}');
 
-      // 메인화면으로 이동
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (context) => StatsScreen()),
-      );
+      bool success;
+      if (_isLogin) {
+        success = await _authService.login(_username, _password);
+      } else {
+        success = await _authService.register(_username, _password);
+      }
+
+      if (success) {
+        final isLoggedIn = await _authService.isLoggedIn();
+        if (isLoggedIn) {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (context) => StatsScreen()),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('로그인 처리 중 오류가 발생했습니다.')),
+          );
+        }
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(_isLogin ? '로그인에 실패했습니다.' : '회원가입에 실패했습니다.')),
+        );
+      }
     }
   }
 }
