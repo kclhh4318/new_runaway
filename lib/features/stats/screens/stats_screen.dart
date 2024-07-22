@@ -70,32 +70,107 @@ class _StatsScreenState extends State<StatsScreen> {
     );
   }
 
+
   Widget _buildTotalStats() {
     return Container(
       padding: EdgeInsets.all(16),
-      child: Column(
+      child: const Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             '총 킬로미터',
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
           ),
-          Text(
-            '99,999 km',
-            style: TextStyle(fontSize: 36, fontWeight: FontWeight.bold),
+          Row(
+            children: [
+              Text(
+                '99,999',
+                style: TextStyle(
+                  fontSize: 36,
+                  fontWeight: FontWeight.bold,
+                  fontFamily: 'Giants',
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+              SizedBox(width: 6), // km 텍스트와 거리 사이의 간격
+              Baseline(
+                baseline: 36, // 텍스트의 베이스라인 위치 조정
+                baselineType: TextBaseline.alphabetic,
+                child: Text(
+                  'km',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
           ),
+          SizedBox(height: 16), // 총 킬로미터와 총 시간 사이의 간격
           Text(
             '총 시간',
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
           ),
           Text(
             '999:99',
-            style: TextStyle(fontSize: 36, fontWeight: FontWeight.bold),
+            style: TextStyle(
+              fontSize: 36,
+              fontWeight: FontWeight.bold,
+              fontFamily: 'Giants',
+              fontStyle: FontStyle.italic,
+            ),
           ),
+          SizedBox(height: 16), // 총 시간과 추가 정보 사이의 간격
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '평균 페이스',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                  Text(
+                    '05:30',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                ],
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '평균 거리',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                  Text(
+                    '05 km',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                ],
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '총 런닝 횟수',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                  Text(
+                    '959 회',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                ],
+              ),
+            ],
+          ),
+
         ],
       ),
     );
   }
+
 
   Widget _buildDateFilter() {
     return Padding(
@@ -186,7 +261,7 @@ class _StatsScreenState extends State<StatsScreen> {
               ),
             ],
           ),
-          SizedBox(height: 10),
+          SizedBox(height: 5),
           _buildRecentRunItem('24.07.19', '8.11 km', '1:35:18', '05:30'),
           _buildRecentRunItem('24.07.18', '6.5 km', '1:15:30', '05:45'),
           _buildRecentRunItem('24.07.17', '10.2 km', '1:55:40', '05:20'),
@@ -271,40 +346,46 @@ class _StatsScreenState extends State<StatsScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 if (runningProvider.isRunning)
-                  ElevatedButton.icon(
-                    icon: Icon(Icons.directions_run),
-                    label: Text('진행 중인 러닝'),
-                    onPressed: () {
+                  InkWell(
+                    onTap: () {
                       Navigator.push(
                         context,
                         MaterialPageRoute(builder: (context) => RunningSessionScreen(showCountdown: false)),
                       );
                     },
-                    style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+                    child: Image.asset(
+                      'assets/images/start_run_btn.png', // 실제 이미지 경로로 변경
+                      width: 100, // 이미지 크기 조정
+                      height: 100,
+                    ),
                   )
                 else
                   ...[
-                    ElevatedButton.icon(
-                      icon: Icon(Icons.edit),
-                      label: Text('코스 그리기'),
-                      onPressed: () {
+                    InkWell(
+                      onTap: () {
                         Navigator.push(
                           context,
                           MaterialPageRoute(builder: (context) => CourseDrawingScreen()),
                         );
                       },
-                      style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
+                      child: Image.asset(
+                        'assets/images/map_drawing_btn.png', // 실제 이미지 경로로 변경
+                        width: 100, // 이미지 크기 조정
+                        height: 100,
+                      ),
                     ),
-                    ElevatedButton.icon(
-                      icon: Icon(Icons.directions_run),
-                      label: Text('러닝 시작'),
-                      onPressed: () {
+                    InkWell(
+                      onTap: () {
                         Navigator.push(
                           context,
                           MaterialPageRoute(builder: (context) => RunningSessionScreen()),
                         );
                       },
-                      style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
+                      child: Image.asset(
+                        'assets/images/start_run_btn.png', // 실제 이미지 경로로 변경
+                        width: 100, // 이미지 크기 조정
+                        height: 100,
+                      ),
                     ),
                   ],
               ],

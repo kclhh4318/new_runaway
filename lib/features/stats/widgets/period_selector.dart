@@ -32,38 +32,41 @@ class _PeriodSelectorState extends State<PeriodSelector> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: 40,
-      decoration: BoxDecoration(
-        color: Colors.grey[200],
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: ['주', '월', '년', '전체'].map((period) {
-          bool isSelected = _selectedPeriod == period;
-          return Expanded(
-            child: GestureDetector(
-              onTap: () => _handlePeriodSelected(period),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: isSelected ? Colors.blue : Colors.transparent,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Center(
-                  child: Text(
-                    period,
-                    style: TextStyle(
-                      color: isSelected ? Colors.white : Colors.black,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12.0), // 양 옆에 12픽셀 여백 추가
+      child: Container(
+        height: 30,
+        decoration: BoxDecoration(
+          color: Colors.grey[200],
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: ['주', '월', '년', '전체'].map((period) {
+            bool isSelected = _selectedPeriod == period;
+            return Expanded(
+              child: GestureDetector(
+                onTap: () => _handlePeriodSelected(period),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: isSelected ? Colors.blue : Colors.transparent,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Center(
+                    child: Text(
+                      period,
+                      style: TextStyle(
+                        color: isSelected ? Colors.white : Colors.black,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
-          );
-        }).toList(),
+            );
+          }).toList(),
+        ),
       ),
     );
   }

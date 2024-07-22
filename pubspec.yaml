@@ -29,3 +29,15 @@ flutter:
   assets:
     - assets/images/
     - .env
+  fonts:
+    - family: Giants
+      fonts:
+        - asset: assets/fonts/Giants-Bold.ttf
+#          weight: 700
+          style: normal
+        - asset: assets/fonts/Giants-Inline.ttf
+#          weight: 400
+          style: italic
+        - asset: assets/fonts/Giants-Regular.ttf
+#          weight: 400
+          style: normal

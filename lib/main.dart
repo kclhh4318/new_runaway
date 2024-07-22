@@ -61,6 +61,7 @@ class MyApp extends StatelessWidget {
         title: 'Runaway',
         theme: ThemeData(
           primarySwatch: Colors.blue,
+          fontFamily: 'Giants',
           visualDensity: VisualDensity.adaptivePlatformDensity,
         ),
         home: const StartPage(),
