@@ -3,7 +3,6 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:new_runaway/features/courses/course_provider.dart';
 import 'package:geolocator/geolocator.dart';
-import 'dart:ui' as ui;
 
 class CourseDrawingScreen extends StatefulWidget {
   const CourseDrawingScreen({Key? key}) : super(key: key);
@@ -88,9 +87,7 @@ class _CourseDrawingScreenState extends State<CourseDrawingScreen> {
               onPanEnd: _onPanEnd,
               child: CustomPaint(
                 painter: SketchPainter(_sketchPoints),
-                child: Container(
-                  color: Colors.transparent,
-                ),
+                size: Size.infinite,
               ),
             ),
           Positioned(
@@ -136,37 +133,13 @@ class _CourseDrawingScreenState extends State<CourseDrawingScreen> {
   void _onPanUpdate(DragUpdateDetails details) {
     setState(() {
       RenderBox renderBox = context.findRenderObject() as RenderBox;
-      _sketchPoints.add(renderBox.globalToLocal(details.globalPosition));
+      Offset localPosition = renderBox.globalToLocal(details.localPosition);
+      _sketchPoints.add(localPosition);
     });
   }
 
   void _onPanEnd(DragEndDetails details) {
-    _convertSketchToLatLng();
-  }
-
-  void _convertSketchToLatLng() {
-    if (_mapController == null) return;
-
-    _points.clear();
-    for (Offset point in _sketchPoints) {
-      _mapController!.getLatLng(ScreenCoordinate(
-        x: point.dx.toInt(),
-        y: point.dy.toInt(),
-      )).then((LatLng latlng) {
-        _points.add(latlng);
-      });
-    }
-    _updatePolyline();
-  }
-
-  void _updatePolyline() {
-    _polylines.clear();
-    _polylines.add(Polyline(
-      polylineId: PolylineId('drawn_course'),
-      points: _points,
-      color: Colors.black,
-      width: 5,
-    ));
+    // 스케치가 끝났을 때 호출되지만, 여기서는 아무 작업도 하지 않습니다.
   }
 
   void _toggleDrawingMode() {
@@ -174,6 +147,8 @@ class _CourseDrawingScreenState extends State<CourseDrawingScreen> {
       _isDrawingMode = !_isDrawingMode;
       if (!_isDrawingMode) {
         _convertSketchToLatLng();
+      } else {
+        _clearDrawing();
       }
     });
   }
@@ -186,9 +161,37 @@ class _CourseDrawingScreenState extends State<CourseDrawingScreen> {
     });
   }
 
+  void _convertSketchToLatLng() {
+    if (_mapController == null) return;
+
+    _points.clear();
+    for (Offset point in _sketchPoints) {
+      _mapController!.getLatLng(ScreenCoordinate(
+        x: point.dx.toInt(),
+        y: point.dy.toInt(),
+      )).then((LatLng latlng) {
+        setState(() {
+          _points.add(latlng);
+          _updatePolyline();
+        });
+      });
+    }
+  }
+
+  void _updatePolyline() {
+    _polylines.clear();
+    _polylines.add(Polyline(
+      polylineId: PolylineId('drawn_course'),
+      points: _points,
+      color: Colors.black,
+      width: 5,
+    ));
+  }
+
   Future<void> _finishDrawing() async {
+    _convertSketchToLatLng();
     final courseProvider = Provider.of<CourseProvider>(context, listen: false);
-    courseProvider.analyzeAndRecommendCourse(_points);
+    await courseProvider.analyzeAndRecommendCourse(_points);
     Navigator.pushNamed(context, '/course_analysis_result');
   }
 }
