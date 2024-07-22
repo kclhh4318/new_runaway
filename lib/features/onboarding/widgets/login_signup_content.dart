@@ -25,10 +25,15 @@ class _LoginSignupContentState extends State<LoginSignupContent> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Image.asset(
-                  "assets/images/login.png",
-                  height: 150,
-                  width: 150,
+                const Text(
+                  "Runaway",
+                  style: TextStyle(
+                    fontSize: 70,
+                    fontWeight: FontWeight.bold,
+                    fontFamily: 'Giants',
+                    fontStyle: FontStyle.italic, // Inline 스타일 적용
+                    color: Colors.white, // 텍스트 색상 설정
+                  ),
                 ),
                 const SizedBox(height: 30),
                 Text(
