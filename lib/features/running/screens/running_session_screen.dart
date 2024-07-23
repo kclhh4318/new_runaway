@@ -86,6 +86,7 @@ class _RunningSessionScreenState extends State<RunningSessionScreen> {
     );
   }
 
+
   void _startRunning() {
     setState(() {
       _showCountdown = false;
@@ -148,7 +149,7 @@ class _RunningSessionScreenState extends State<RunningSessionScreen> {
   Widget _buildControlButton(RunningProvider provider) {
     return GestureDetector(
       onTap: provider.isRunning ? provider.pauseRunning : provider.resumeRunning,
-      onLongPress: _stopRunning,
+      onLongPress: () => _stopRunning(provider),
       child: Container(
         width: 80,
         height: 80,
@@ -174,12 +175,17 @@ class _RunningSessionScreenState extends State<RunningSessionScreen> {
     return '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}:${remainingSeconds.toString().padLeft(2, '0')}';
   }
 
-  void _stopRunning() {
-    context.read<RunningProvider>().stopRunning();
+  Future<void> _stopRunning(RunningProvider provider) async {
+    await provider.stopRunning();
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
-        builder: (context) => const RunResultScreen(),
+        builder: (context) => RunResultScreen(
+          distance: provider.distance,
+          duration: provider.seconds,
+          avgPace: provider.avgPace,
+          route: provider.routePoints,
+        ),
       ),
     );
   }

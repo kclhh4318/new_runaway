@@ -10,8 +10,11 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:new_runaway/features/courses/screens/course_analysis_result_screen.dart';
 import 'package:new_runaway/services/session_service.dart';
 import 'package:new_runaway/features/stats/screens/stats_screen.dart';
+import 'package:new_runaway/utils/logger.dart';
 
 void main() async {
+  setupLogger();
+
   WidgetsFlutterBinding.ensureInitialized();
 
   // Load environment variables

@@ -4,6 +4,7 @@ import 'package:new_runaway/features/courses/course_provider.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:new_runaway/features/running/screens/running_session_screen.dart';
 import 'package:new_runaway/features/running/widgets/countdown_timer.dart';
+import 'package:new_runaway/features/running/running_provider.dart';
 
 class CourseAnalysisResultScreen extends StatelessWidget {
 
@@ -56,7 +57,18 @@ class CourseAnalysisResultScreen extends StatelessWidget {
                   children: [
                     ElevatedButton(
                       onPressed: recommendedCourse != null
-                          ? () => _showCountdownAndStartRunning(context, recommendedCourse.points)
+                          ? () {
+                        final runningProvider = Provider.of<RunningProvider>(context, listen: false);
+                        runningProvider.startRunning(predefinedCourse: recommendedCourse.points);
+                        Navigator.of(context).pushReplacement(
+                          MaterialPageRoute(
+                            builder: (context) => RunningSessionScreen(
+                              showCountdown: true,
+                              predefinedCourse: recommendedCourse.points,
+                            ),
+                          ),
+                        );
+                      }
                           : null,
                       child: Text('GO!'),
                     ),

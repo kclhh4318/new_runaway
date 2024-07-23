@@ -2,10 +2,13 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:new_runaway/config/app_config.dart';
 import 'package:new_runaway/services/token_service.dart';
+import 'package:new_runaway/services/storage_service.dart';
+import 'package:new_runaway/utils/logger.dart';
 
 class ApiService {
   final String baseUrl = AppConfig.apiBaseUrl;
   final TokenService _tokenService = TokenService();
+  final StorageService _storageService = StorageService();
 
   Future<dynamic> get(String endpoint) async {
     return _request(() async => http.get(
@@ -14,13 +17,27 @@ class ApiService {
     ));
   }
 
-  Future<dynamic> post(String endpoint, dynamic data) async {
-    return _request(() async => http.post(
+  Future<http.Response> post(String endpoint, dynamic data, {Map<String, String>? headers}) async {
+    logger.info('Sending POST request to endpoint: $endpoint');
+    final allHeaders = await _getHeaders();
+    if (headers != null) {
+      allHeaders.addAll(headers);
+    }
+    logger.info('Request headers: $allHeaders');
+    logger.info('Request body: $data');
+
+    final response = await http.post(
       Uri.parse('$baseUrl/$endpoint'),
-      headers: await _getHeaders(),
+      headers: allHeaders,
       body: json.encode(data),
-    ));
+    );
+
+    logger.info('Response status code: ${response.statusCode}');
+    logger.info('Response body: ${response.body}');
+
+    return response;
   }
+
 
   Future<Map<String, String>> _getHeaders() async {
     final accessToken = await _tokenService.getAccessToken();
@@ -45,6 +62,26 @@ class ApiService {
     } catch (e) {
       throw Exception('Request failed: $e');
     }
+  }
+
+  Future<Map<String, dynamic>> startRunningSession() async {
+    logger.info('Starting running session');
+    final userId = await _storageService.getUserId();
+    final response = await post(
+      'running_sessions/start',
+      {},
+      headers: {'x-user-id': userId ?? ''},
+    );
+    logger.info('Running session start response: ${response.body}');
+    return json.decode(response.body);
+  }
+
+  Future<void> endRunningSession(String sessionId, Map<String, dynamic> sessionData) async {
+    logger.info('Ending running session');
+    logger.info('Session ID: $sessionId');
+    logger.info('Session data: $sessionData');
+    final response = await post('running_sessions/$sessionId/end', sessionData);
+    logger.info('Running session end response: ${response.body}');
   }
 
   Future<bool> _refreshToken() async {
@@ -112,4 +149,5 @@ class ApiService {
       throw Exception('Failed to register: ${response.statusCode}');
     }
   }
+
 }
