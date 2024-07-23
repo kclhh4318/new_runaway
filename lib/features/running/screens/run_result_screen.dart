@@ -226,5 +226,4 @@ class _RunResultScreenState extends State<RunResultScreen> {
     }
   }
 
-
 }
