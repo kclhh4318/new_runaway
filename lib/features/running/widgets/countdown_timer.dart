@@ -44,22 +44,26 @@ class _CountdownTimerState extends State<CountdownTimer> with SingleTickerProvid
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: AnimatedBuilder(
-        animation: _controller,
-        builder: (context, child) {
-          return Transform.scale(
-            scale: 1.0 + _controller.value * 0.5,
-            child: Opacity(
-              opacity: 1.0 - _controller.value * 0.5,
-              child: Text(
-                '$_count',
-                style: TextStyle(fontSize: 72, fontWeight: FontWeight.bold),
+    return Container(
+      color: Color(0xFF0064FF),
+      child: Center(
+        child: AnimatedBuilder(
+          animation: _controller,
+          builder: (context, child) {
+            return Transform.scale(
+              scale: 1.0 + _controller.value * 0.5,
+              child: Opacity(
+                opacity: 1.0 - _controller.value * 0.5,
+                child: Text(
+                  '$_count',
+                  style: TextStyle(fontSize: 72, fontWeight: FontWeight.bold, color: Colors.black),
+                ),
               ),
-            ),
-          );
-        },
+            );
+          },
+        ),
       ),
     );
   }
+
 }

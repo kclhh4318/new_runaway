@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:new_runaway/features/running/running_provider.dart';
 import 'package:new_runaway/features/running/widgets/run_map.dart';
@@ -33,6 +34,15 @@ class _RunningSessionScreenState extends State<RunningSessionScreen> {
         _startRunning();
       });
     }
+    // 상단바 숨기기
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: []);
+  }
+
+  @override
+  void dispose() {
+    // 상단바 복원
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: SystemUiOverlay.values);
+    super.dispose();
   }
 
   @override
@@ -43,7 +53,7 @@ class _RunningSessionScreenState extends State<RunningSessionScreen> {
         return false;
       },
       child: Scaffold(
-        appBar: AppBar(
+/*        appBar: AppBar(
           title: Text('러닝'),
           leading: IconButton(
             icon: Icon(Icons.arrow_back),
@@ -51,7 +61,7 @@ class _RunningSessionScreenState extends State<RunningSessionScreen> {
               Navigator.of(context).pop();
             },
           ),
-        ),
+        ),*/
         body: SafeArea(
           child: _showCountdown
               ? CountdownTimer(onFinished: _startRunning)
@@ -95,7 +105,7 @@ class _RunningSessionScreenState extends State<RunningSessionScreen> {
 
   Widget _buildRunningStats(RunningProvider provider) {
     return Container(
-      color: Colors.blue,
+      color: Color(0xFF0064FF),
       padding: EdgeInsets.all(20),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -121,8 +131,8 @@ class _RunningSessionScreenState extends State<RunningSessionScreen> {
   Widget _buildPaceItem(String label, String value) {
     return Column(
       children: [
-        Text(label, style: TextStyle(color: Colors.white70, fontSize: 16)),
-        Text(value, style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+        Text(label, style: TextStyle(color: Colors.black87, fontSize: 16)),
+        Text(value, style: TextStyle(color: Colors.black, fontSize: 24, fontWeight: FontWeight.bold)),
       ],
     );
   }
@@ -130,16 +140,16 @@ class _RunningSessionScreenState extends State<RunningSessionScreen> {
   Widget _buildTimeAndDistance(RunningProvider provider) {
     return Column(
       children: [
-        Text('시간', style: TextStyle(color: Colors.white70, fontSize: 20)),
+        Text('시간', style: TextStyle(color: Colors.black, fontSize: 20)),
         Text(
           _formatTime(provider.seconds),
-          style: TextStyle(color: Colors.white, fontSize: 64, fontWeight: FontWeight.bold),
+          style: TextStyle(color: Colors.black, fontSize: 64, fontWeight: FontWeight.bold),
         ),
         SizedBox(height: 20),
-        Text('달린 거리', style: TextStyle(color: Colors.white70, fontSize: 20)),
+        Text('달린 거리', style: TextStyle(color: Colors.black, fontSize: 20)),
         Text(
           '${provider.distance.toStringAsFixed(2)}',
-          style: TextStyle(color: Colors.white, fontSize: 64, fontWeight: FontWeight.bold),
+          style: TextStyle(color: Colors.black, fontSize: 64, fontWeight: FontWeight.bold),
         ),
       ],
     );
@@ -154,12 +164,12 @@ class _RunningSessionScreenState extends State<RunningSessionScreen> {
         height: 80,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: Colors.white,
+          color: Colors.black,
         ),
         child: Icon(
           provider.isRunning ? Icons.pause : Icons.play_arrow,
           size: 50,
-          color: Colors.blue,
+          color: Color(0xFF0064FF),
         ),
       ),
     );

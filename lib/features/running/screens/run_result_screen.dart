@@ -90,7 +90,7 @@ class _RunResultScreenState extends State<RunResultScreen> {
                     child: Container(
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(10),
-                        color: _runningIntensity == 10 ? Color(0xFFFF5200) : Colors.blue,
+                        color: _runningIntensity == 10 ? Color(0xFFFF5200) : Color(0xFF0064FF),
                       ),
                     ),
                   ),
