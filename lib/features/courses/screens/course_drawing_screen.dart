@@ -18,6 +18,8 @@ class _CourseDrawingScreenState extends State<CourseDrawingScreen> {
   bool _isDrawingMode = false;
   List<Widget> _nearbyCourseThumbnails = [];
   LatLng? _currentLocation;
+  List<Offset> _sketchPoints = []; // 타입 변경
+  LatLngBounds? _lastBounds; // 새로운 변수 추가
 
   @override
   void initState() {
@@ -79,12 +81,15 @@ class _CourseDrawingScreenState extends State<CourseDrawingScreen> {
             polylines: _polylines,
             myLocationEnabled: true,
             myLocationButtonEnabled: true,
-            onTap: _isDrawingMode ? _addPoint : null,
           ),
           if (_isDrawingMode)
-            Container(
-              color: Colors.white.withOpacity(0.3),
-              child: Center(child: Text('드로잉 모드')),
+            GestureDetector(
+              onPanUpdate: _onPanUpdate,
+              onPanEnd: _onPanEnd,
+              child: CustomPaint(
+                painter: SketchPainter(_sketchPoints),
+                size: Size.infinite,
+              ),
             ),
           Positioned(
             bottom: 16,
@@ -126,27 +131,61 @@ class _CourseDrawingScreenState extends State<CourseDrawingScreen> {
     );
   }
 
+  void _onPanUpdate(DragUpdateDetails details) async {
+    if (_mapController == null) return;
+    RenderBox renderBox = context.findRenderObject() as RenderBox;
+    Offset localPosition = renderBox.globalToLocal(details.localPosition);
+
+    setState(() {
+      _sketchPoints.add(localPosition);
+    });
+
+    // 매 업데이트마다 bounds를 가져오지 않고, 주기적으로 업데이트
+    if (_lastBounds == null || _sketchPoints.length % 10 == 0) {
+      _lastBounds = await _mapController!.getVisibleRegion();
+    }
+  }
+
+  void _onPanEnd(DragEndDetails details) {
+    // 스케치가 끝났을 때 호출되지만, 여기서는 아무 작업도 하지 않습니다.
+  }
+
   void _toggleDrawingMode() {
     setState(() {
       _isDrawingMode = !_isDrawingMode;
       if (!_isDrawingMode) {
-        _updatePolyline();
+        _convertSketchToLatLng();
+      } else {
+        _clearDrawing();
       }
-    });
-  }
-
-  void _addPoint(LatLng point) {
-    setState(() {
-      _points.add(point);
-      _updatePolyline();
     });
   }
 
   void _clearDrawing() {
     setState(() {
+      _sketchPoints.clear();
       _points.clear();
       _updatePolyline();
     });
+  }
+
+  void _convertSketchToLatLng() async {
+    if (_lastBounds == null) return;
+
+    _points.clear();
+    for (var point in _sketchPoints) {
+      double percentageX = point.dx / context.size!.width;
+      double percentageY = point.dy / context.size!.height;
+
+      double lngDiff = _lastBounds!.northeast.longitude - _lastBounds!.southwest.longitude;
+      double latDiff = _lastBounds!.northeast.latitude - _lastBounds!.southwest.latitude;
+
+      double longitude = _lastBounds!.southwest.longitude + (lngDiff * percentageX);
+      double latitude = _lastBounds!.northeast.latitude - (latDiff * percentageY);
+
+      _points.add(LatLng(latitude, longitude));
+    }
+    _updatePolyline();
   }
 
   void _updatePolyline() {
@@ -160,8 +199,30 @@ class _CourseDrawingScreenState extends State<CourseDrawingScreen> {
   }
 
   void _finishDrawing() {
+    _convertSketchToLatLng();
     final courseProvider = Provider.of<CourseProvider>(context, listen: false);
     courseProvider.analyzeAndRecommendCourse(_points);
     Navigator.pushNamed(context, '/course_analysis_result');
   }
+}
+
+class SketchPainter extends CustomPainter {
+  final List<Offset> points;
+
+  SketchPainter(this.points);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    Paint paint = Paint()
+      ..color = Colors.black
+      ..strokeCap = StrokeCap.round
+      ..strokeWidth = 4.0;
+
+    for (int i = 0; i < points.length - 1; i++) {
+      canvas.drawLine(points[i], points[i + 1], paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(SketchPainter oldDelegate) => true;
 }

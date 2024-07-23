@@ -8,12 +8,12 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 class RunningSessionScreen extends StatefulWidget {
   final bool showCountdown;
-  final List<LatLng>? initialRoute;
+  final List<LatLng>? predefinedCourse;
 
   const RunningSessionScreen({
     Key? key,
     this.showCountdown = true,
-    this.initialRoute,
+    this.predefinedCourse,
   }) : super(key: key);
 
   @override
@@ -33,10 +33,8 @@ class _RunningSessionScreenState extends State<RunningSessionScreen> {
         _startRunning();
       });
     }
-    if (widget.initialRoute != null) {
-      context.read<RunningProvider>().setInitialRoute(widget.initialRoute!);
-    }
   }
+
   @override
   Widget build(BuildContext context) {
     return WillPopScope(
@@ -76,7 +74,7 @@ class _RunningSessionScreenState extends State<RunningSessionScreen> {
                   child: _showMap
                       ? RunMap(
                     routePoints: runningProvider.routePoints,
-                    initialRoute: widget.initialRoute,
+                    predefinedCourse: widget.predefinedCourse,
                   )
                       : _buildRunningStats(runningProvider),
                 ),
@@ -92,7 +90,7 @@ class _RunningSessionScreenState extends State<RunningSessionScreen> {
     setState(() {
       _showCountdown = false;
     });
-    context.read<RunningProvider>().startRunning();
+    context.read<RunningProvider>().startRunning(predefinedCourse: widget.predefinedCourse);
   }
 
   Widget _buildRunningStats(RunningProvider provider) {
@@ -166,6 +164,8 @@ class _RunningSessionScreenState extends State<RunningSessionScreen> {
       ),
     );
   }
+
+
 
   String _formatTime(int seconds) {
     final hours = seconds ~/ 3600;

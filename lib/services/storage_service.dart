@@ -15,4 +15,11 @@ class StorageService {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(key);
   }
+
+  Future<void> printSavedTokens() async {
+    final accessToken = await getString('accessToken');
+    final refreshToken = await getString('refreshToken');
+    print('Saved Access Token: $accessToken');
+    print('Saved Refresh Token: $refreshToken');
+  }
 }
