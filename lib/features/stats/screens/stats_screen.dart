@@ -79,14 +79,15 @@ class _StatsScreenState extends State<StatsScreen> {
         children: [
           Text(
             '총 킬로미터',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
           ),
           Row(
             children: [
               Text(
                 '99,999',
                 style: TextStyle(
-                  fontSize: 42,
+                  height: 1.2,
+                  fontSize: 55,
                   fontWeight: FontWeight.bold,
                   fontFamily: 'Giants',
                   fontStyle: FontStyle.italic,
@@ -94,12 +95,12 @@ class _StatsScreenState extends State<StatsScreen> {
               ),
               SizedBox(width: 6), // km 텍스트와 거리 사이의 간격
               Baseline(
-                baseline: 36, // 텍스트의 베이스라인 위치 조정
+                baseline: 45, // 텍스트의 베이스라인 위치 조정
                 baselineType: TextBaseline.alphabetic,
                 child: Text(
                   'km',
                   style: TextStyle(
-                    fontSize: 16,
+                    fontSize: 20,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -109,12 +110,13 @@ class _StatsScreenState extends State<StatsScreen> {
           SizedBox(height: 16), // 총 킬로미터와 총 시간 사이의 간격
           Text(
             '총 시간',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
           ),
           Text(
             '999:99',
             style: TextStyle(
-              fontSize: 42,
+              height: 1.2,
+              fontSize: 55,
               fontWeight: FontWeight.bold,
               fontFamily: 'Giants',
               fontStyle: FontStyle.italic,
@@ -255,14 +257,14 @@ class _StatsScreenState extends State<StatsScreen> {
             children: [
               Text('최근 러닝', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
               TextButton(
-                child: Text('더 보기'),
+                child: Text('더 보기', style: TextStyle(color: Colors.black54)),
                 onPressed: () {
                   // TODO: Navigate to all running records screen
                 },
               ),
             ],
           ),
-          SizedBox(height: 5),
+          SizedBox(height: 10),
           _buildRecentRunItem('24.07.19', '8.11 km', '1:35:18', '05:30'),
           _buildRecentRunItem('24.07.18', '6.5 km', '1:15:30', '05:45'),
           _buildRecentRunItem('24.07.17', '10.2 km', '1:55:40', '05:20'),
