@@ -79,7 +79,7 @@ class _StatsScreenState extends State<StatsScreen> {
         children: [
           Text(
             '총 킬로미터',
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
           ),
           Row(
             children: [
@@ -87,7 +87,7 @@ class _StatsScreenState extends State<StatsScreen> {
                 '99,999',
                 style: TextStyle(
                   height: 1.2,
-                  fontSize: 55,
+                  fontSize: 50,
                   fontWeight: FontWeight.bold,
                   fontFamily: 'Giants',
                   fontStyle: FontStyle.italic,
@@ -100,7 +100,7 @@ class _StatsScreenState extends State<StatsScreen> {
                 child: Text(
                   'km',
                   style: TextStyle(
-                    fontSize: 20,
+                    fontSize: 16,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -110,13 +110,13 @@ class _StatsScreenState extends State<StatsScreen> {
           SizedBox(height: 16), // 총 킬로미터와 총 시간 사이의 간격
           Text(
             '총 시간',
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
           ),
           Text(
             '999:99',
             style: TextStyle(
               height: 1.2,
-              fontSize: 55,
+              fontSize: 50,
               fontWeight: FontWeight.bold,
               fontFamily: 'Giants',
               fontStyle: FontStyle.italic,
@@ -265,15 +265,28 @@ class _StatsScreenState extends State<StatsScreen> {
             ],
           ),
           SizedBox(height: 10),
-          _buildRecentRunItem('24.07.19', '8.11 km', '1:35:18', '05:30'),
-          _buildRecentRunItem('24.07.18', '6.5 km', '1:15:30', '05:45'),
-          _buildRecentRunItem('24.07.17', '10.2 km', '1:55:40', '05:20'),
+          _buildRecentRunItem('24.07.19', '8.11 km', '1:35:18', '05:30', 1),
+          _buildRecentRunItem('24.07.18', '6.5 km', '1:15:30', '05:45', 10),
+          _buildRecentRunItem('24.07.17', '10.2 km', '1:55:40', '05:20', 7),
         ],
       ),
     );
   }
 
-  Widget _buildRecentRunItem(String date, String distance, String time, String pace) {
+  Widget _buildRecentRunItem(String date, String distance, String time, String pace, int strength) {
+    String badgeImage;
+    if (strength >= 1 && strength <= 3) {
+      badgeImage = 'assets/images/strength1-3.png';
+    } else if (strength >= 4 && strength <= 6) {
+      badgeImage = 'assets/images/strength4-6.png';
+    } else if (strength >= 7 && strength <= 9) {
+      badgeImage = 'assets/images/strength7-9.png';
+    } else if (strength == 10) {
+      badgeImage = 'assets/images/strength10.png';
+    } else {
+      badgeImage = ''; // 기본값을 설정하거나 필요에 따라 다르게 처리
+    }
+
     return Container(
       margin: EdgeInsets.only(bottom: 10),
       padding: EdgeInsets.all(10),
@@ -348,9 +361,9 @@ class _StatsScreenState extends State<StatsScreen> {
             top: 0,
             right: 0,
             child: Image.asset(
-              'assets/images/strength10.png', // 뱃지 이미지 경로
-              width: 27,
-              height: 27,
+              badgeImage, // 뱃지 이미지 경로
+              width: 45,
+              height: 45,
             ),
           ),
         ],
