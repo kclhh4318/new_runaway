@@ -186,15 +186,17 @@ class _RunningSessionScreenState extends State<RunningSessionScreen> {
   }
 
   Future<void> _stopRunning(RunningProvider provider) async {
-    await provider.stopRunning();
+    final sessionData = await provider.stopRunning();
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
         builder: (context) => RunResultScreen(
-          distance: provider.distance,
-          duration: provider.seconds,
-          avgPace: provider.avgPace,
-          route: provider.routePoints,
+          sessionId: sessionData['sessionId'],
+          distance: sessionData['distance'],
+          duration: sessionData['duration'],
+          avgPace: sessionData['avgPace'],
+          currentPace: sessionData['currentPace'],
+          route: sessionData['route'],
         ),
       ),
     );

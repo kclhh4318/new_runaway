@@ -24,7 +24,7 @@ class ApiService {
       allHeaders.addAll(headers);
     }
     logger.info('Request headers: $allHeaders');
-    logger.info('Request body: $data');
+    logger.info('Request body: ${json.encode(data)}');
 
     final response = await http.post(
       Uri.parse('$baseUrl/$endpoint'),
@@ -38,12 +38,16 @@ class ApiService {
     return response;
   }
 
-
   Future<Map<String, String>> _getHeaders() async {
     final accessToken = await _tokenService.getAccessToken();
+    final userId = await _storageService.getUserId();
+
+    logger.info('Getting headers. User ID: $userId');
+
     return {
       'Content-Type': 'application/json',
       if (accessToken != null) 'Authorization': 'Bearer $accessToken',
+      if (userId != null) 'x-user-id': userId,
     };
   }
 
@@ -149,5 +153,4 @@ class ApiService {
       throw Exception('Failed to register: ${response.statusCode}');
     }
   }
-
 }
