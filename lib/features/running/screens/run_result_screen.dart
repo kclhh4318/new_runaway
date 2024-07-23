@@ -2,9 +2,21 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:new_runaway/features/running/running_provider.dart';
 import 'package:new_runaway/features/running/widgets/run_map.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 class RunResultScreen extends StatefulWidget {
-  const RunResultScreen({Key? key}) : super(key: key);
+  final double distance;
+  final int duration;
+  final double avgPace;
+  final List<LatLng> route;
+
+  const RunResultScreen({
+    Key? key,
+    required this.distance,
+    required this.duration,
+    required this.avgPace,
+    required this.route,
+  }) : super(key: key);
 
   @override
   _RunResultScreenState createState() => _RunResultScreenState();
@@ -14,9 +26,25 @@ class _RunResultScreenState extends State<RunResultScreen> {
   int _runningIntensity = 5;
 
   @override
-  Widget build(BuildContext context) {
-    final runningProvider = context.read<RunningProvider>();
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _sendSessionEndRequest();
+    });
+  }
 
+  Future<void> _sendSessionEndRequest() async {
+    final runningProvider = context.read<RunningProvider>();
+    await runningProvider.endRunningSession(
+      distance: widget.distance,
+      duration: widget.duration,
+      avgPace: widget.avgPace,
+      route: widget.route,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('러닝 결과'),
@@ -31,12 +59,12 @@ class _RunResultScreenState extends State<RunResultScreen> {
         child: Column(
           children: [
             _buildResultItem('날짜', '${DateTime.now().toString().split(' ')[0]}'),
-            _buildResultItem('거리', '${runningProvider.distance.toStringAsFixed(2)} km'),
-            _buildResultItem('시간', _formatTime(runningProvider.seconds)),
-            _buildResultItem('평균 페이스', _formatPace(runningProvider.avgPace)),
+            _buildResultItem('거리', '${widget.distance.toStringAsFixed(2)} km'),
+            _buildResultItem('시간', _formatTime(widget.duration)),
+            _buildResultItem('평균 페이스', _formatPace(widget.avgPace)),
             Container(
               height: 300,
-              child: RunMap(routePoints: runningProvider.routePoints),
+              child: RunMap(routePoints: widget.route),
             ),
             _buildRunningIntensity(),
           ],
@@ -57,6 +85,8 @@ class _RunResultScreenState extends State<RunResultScreen> {
       ),
     );
   }
+
+
 
   Widget _buildRunningIntensity() {
     return Padding(

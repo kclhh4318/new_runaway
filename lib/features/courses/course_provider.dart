@@ -25,18 +25,22 @@ class CourseProvider extends ChangeNotifier {
       $pointsJson
       
       Please analyze this course and recommend a similar running route that:
-      1. Follows the general shape and direction of the drawn course as closely as possible
-      2. Strictly avoids highways, major roads, and any areas not suitable for pedestrians
-      3. Prefers paths with sidewalks, dedicated running/cycling paths, or pedestrian-friendly areas
-      4. Includes interesting landmarks or scenic areas if possible
-      5. Maintains a similar total distance to the original drawn course (within 10% deviation)
-      6. Ensures the route is circular (start and end points are close to each other)
-      7. Adjusts the route to follow actual roads and paths that runners can use
+      1. Follows the general shape and direction of the drawn course
+      2. STRICTLY avoids highways, major roads, and any areas not suitable for pedestrians
+      3. Adjusts the route to follow actual roads, paths, or trails that runners can safely use
+      4. Prioritizes pedestrian-friendly areas such as sidewalks, parks, or dedicated running paths
+      5. Maintains a similar total distance to the original drawn course (within 15% deviation)
+      6. Ensures the route is circular (start and end points should be within 100 meters of each other)
+      7. Includes at least one interesting landmark or scenic area if possible
+      8. Limits the number of sharp turns or complex intersections for runner safety
+      9. Considers potential running hazards and tries to minimize them
+
+      The recommended course must be significantly different from the original drawn course to ensure it follows real, safe running paths.
 
       Provide the recommended course as a list of LatLng coordinates, along with:
-      - The total distance of the course in kilometers
+      - The total distance of the course in kilometers (must be different from the original)
       - A brief description of the route, highlighting any notable features or areas
-      - Any safety tips or considerations for runners specific to this route
+      - At least three specific safety tips or considerations for runners on this route
 
       Format your response as a JSON object for easy parsing, including the following keys:
       coordinates, distance, description, safetyTips
@@ -48,7 +52,6 @@ class CourseProvider extends ChangeNotifier {
       notifyListeners();
     } catch (e) {
       print('Error analyzing and recommending course: $e');
-      // 에러 발생 시 기본 코스 생성
       _recommendedCourse = _createDefaultCourse(drawnPoints);
       _totalDistance = _calculateDistance(drawnPoints);
       notifyListeners();
