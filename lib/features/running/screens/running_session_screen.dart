@@ -74,7 +74,7 @@ class _RunningSessionScreenState extends State<RunningSessionScreen> {
                   child: _showMap
                       ? RunMap(
                     routePoints: runningProvider.routePoints,
-                    predefinedCourse: widget.predefinedCourse,
+                    predefinedCourse: runningProvider.predefinedCourse,
                   )
                       : _buildRunningStats(runningProvider),
                 ),

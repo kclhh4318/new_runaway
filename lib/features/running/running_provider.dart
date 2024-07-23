@@ -4,6 +4,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart' show LatLng;
 
 class RunningProvider with ChangeNotifier {
+
   bool _isRunning = false;
   int _seconds = 0;
   double _distance = 0.0;
@@ -11,11 +12,6 @@ class RunningProvider with ChangeNotifier {
   double _currentPace = 0.0;
   List<LatLng> _routePoints = [];
   List<LatLng>? _predefinedCourse;
-
-  void setInitialRoute(List<LatLng> initialRoute) {
-    _routePoints = List.from(initialRoute);
-    notifyListeners();
-  }
 
   Timer? _timer;
   StreamSubscription<Position>? _positionStream;
@@ -26,6 +22,7 @@ class RunningProvider with ChangeNotifier {
   double get avgPace => _avgPace;
   double get currentPace => _currentPace;
   List<LatLng> get routePoints => _routePoints;
+  List<LatLng>? get predefinedCourse => _predefinedCourse;
 
   void resetSession() {
     _isRunning = false;
@@ -37,6 +34,11 @@ class RunningProvider with ChangeNotifier {
     _predefinedCourse = null;
     _timer?.cancel();
     _positionStream?.cancel();
+  }
+
+  void setInitialRoute(List<LatLng> initialRoute) {
+    _routePoints = List.from(initialRoute);
+    notifyListeners();
   }
 
   Future<void> startRunning({List<LatLng>? predefinedCourse}) async {

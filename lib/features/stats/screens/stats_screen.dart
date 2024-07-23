@@ -5,6 +5,7 @@ import 'package:new_runaway/features/running/screens/running_session_screen.dart
 import 'package:new_runaway/features/stats/widgets/period_selector.dart';
 import 'package:new_runaway/features/stats/widgets/stats_bar_chart.dart';
 import 'package:new_runaway/features/running/running_provider.dart';
+import 'package:new_runaway/features/stats/screens/all_runs_screen.dart'; // 새로 추가
 
 class StatsScreen extends StatefulWidget {
   const StatsScreen({Key? key}) : super(key: key);
@@ -257,7 +258,10 @@ class _StatsScreenState extends State<StatsScreen> {
               TextButton(
                 child: Text('더 보기'),
                 onPressed: () {
-                  // TODO: Navigate to all running records screen
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => AllRunsScreen()),
+                  );
                 },
               ),
             ],

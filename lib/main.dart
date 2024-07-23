@@ -8,6 +8,8 @@ import 'package:google_maps_flutter_android/google_maps_flutter_android.dart';
 import 'package:google_maps_flutter_platform_interface/google_maps_flutter_platform_interface.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:new_runaway/features/courses/screens/course_analysis_result_screen.dart';
+import 'package:new_runaway/services/session_service.dart';
+import 'package:new_runaway/features/stats/screens/stats_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -64,7 +66,20 @@ class MyApp extends StatelessWidget {
           fontFamily: 'Giants',
           visualDensity: VisualDensity.adaptivePlatformDensity,
         ),
-        home: const StartPage(),
+        home: FutureBuilder<bool>(
+          future: SessionService().isLoggedIn(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return CircularProgressIndicator();
+            } else {
+              if (snapshot.data == true) {
+                return StatsScreen();
+              } else {
+                return StartPage();
+              }
+            }
+          },
+        ),
         routes: {
           '/course_analysis_result': (context) => CourseAnalysisResultScreen(),
         },
