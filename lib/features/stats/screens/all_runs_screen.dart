@@ -51,6 +51,7 @@ class _AllRunsScreenState extends State<AllRunsScreen> {
           distance: (5 + index % 5).toDouble(),
           duration: 1800 + index * 60,
           averagePace: 300.0 + index,
+          strength: (index % 10) + 1, // 새로 추가된 속성에 대한 값
         ),
       );
 

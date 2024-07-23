@@ -4,6 +4,7 @@ import 'package:new_runaway/config/app_config.dart';
 import 'package:new_runaway/services/token_service.dart';
 import 'package:new_runaway/services/storage_service.dart';
 import 'package:new_runaway/utils/logger.dart';
+import 'package:new_runaway/models/running_session.dart';
 
 class ApiService {
   final String baseUrl = AppConfig.apiBaseUrl;
@@ -153,4 +154,18 @@ class ApiService {
       throw Exception('Failed to register: ${response.statusCode}');
     }
   }
+
+  Future<List<RunningSession>> getRecentRuns(String userId) async {
+    try {
+      final response = await get('running_sessions/runs/$userId');
+      if (response == null) {
+        return []; // 응답이 null인 경우 빈 리스트 반환
+      }
+      return (response as List).map((json) => RunningSession.fromJson(json)).toList();
+    } catch (e) {
+      print('Error getting recent runs: $e');
+      return []; // 에러 발생 시 빈 리스트 반환
+    }
+  }
+
 }
