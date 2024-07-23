@@ -14,11 +14,12 @@ class AuthService {
       final response = await _apiService.login(username, password);
       logger.info('Login response received: $response');
 
-      if (response.containsKey('access_token') && response.containsKey('refresh_token')) {
+      if (response.containsKey('access_token') && response.containsKey('refresh_token') && response.containsKey('user_id')) {
         await _storageService.saveString('accessToken', response['access_token']);
         await _storageService.saveString('refreshToken', response['refresh_token']);
-        logger.info('Login successful, tokens saved');
-        return {'success': true, 'message': 'Login successful'};
+        await _storageService.saveString('userId', response['user_id']);
+        logger.info('Login successful, tokens and user_id saved');
+        return {'success': true, 'message': 'Login successful', 'user_id': response['user_id']};
       } else {
         logger.warning('Invalid response from server: $response');
         return {'success': false, 'message': 'Invalid server response'};

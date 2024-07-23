@@ -16,6 +16,14 @@ class StorageService {
     await prefs.remove(key);
   }
 
+  Future<void> saveUserId(String userId) async {
+    await saveString('userId', userId);
+  }
+
+  Future<String?> getUserId() async {
+    return getString('userId');
+  }
+
   Future<void> printSavedTokens() async {
     final accessToken = await getString('accessToken');
     final refreshToken = await getString('refreshToken');
