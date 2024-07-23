@@ -249,52 +249,70 @@ class _StatsScreenState extends State<StatsScreen> {
   }
 
   Widget _buildRecentRuns(BuildContext context, ApiService apiService) {
-    return FutureBuilder<String?>(
-      future: StorageService().getUserId(),
-      builder: (context, userIdSnapshot) {
-        if (userIdSnapshot.connectionState == ConnectionState.waiting) {
-          return CircularProgressIndicator();
-        } else if (userIdSnapshot.hasError) {
-          return Text('Error: ${userIdSnapshot.error}');
-        } else if (!userIdSnapshot.hasData || userIdSnapshot.data == null) {
-          return Text('User ID not found');
-        } else {
-          final userId = userIdSnapshot.data!;
-          return FutureBuilder<List<RunningSession>>(
-            future: apiService.getRecentRuns(userId),
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return CircularProgressIndicator();
-              } else if (snapshot.hasError) {
-                return Text('Error: ${snapshot.error}');
-              } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('최근 러닝', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                    SizedBox(height: 10),
-                    Text('최근 러닝 기록이 없습니다.'),
-                  ],
-                );
-              } else {
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('최근 러닝', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                    ...snapshot.data!.map((run) => _buildRecentRunItem(
-                      run.date.toString().substring(0, 10),
-                      '${run.distance.toStringAsFixed(2)} km',
-                      _formatDuration(run.duration),
-                      _formatPace(run.averagePace),
-                      run.strength,
-                    )),
-                  ],
-                );
-              }
-            },
-          );
-        }
-      },
+    return Container(
+      padding: EdgeInsets.all(16),
+      child: FutureBuilder<String?>(
+        future: StorageService().getUserId(),
+        builder: (context, userIdSnapshot) {
+          if (!userIdSnapshot.hasData || userIdSnapshot.data == null) {
+            return _buildEmptyRecentRuns();
+          } else {
+            final userId = userIdSnapshot.data!;
+            return FutureBuilder<List<RunningSession>>(
+              future: apiService.getRecentRuns(userId),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('최근 러닝', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                      SizedBox(height: 10),
+                      CircularProgressIndicator(),
+                    ],
+                  );
+                } else if (snapshot.hasError) {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('최근 러닝', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                      SizedBox(height: 10),
+                      Text('Error: ${snapshot.error}'),
+                    ],
+                  );
+                } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                  return _buildEmptyRecentRuns();
+                } else {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('최근 러닝', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                      SizedBox(height: 10),
+                      ...snapshot.data!.map((run) => _buildRecentRunItem(
+                        run.date.toString().substring(0, 10),
+                        '${run.distance.toStringAsFixed(2)} km',
+                        _formatDuration(run.duration),
+                        _formatPace(run.averagePace),
+                        run.strength,
+                      )),
+                    ],
+                  );
+                }
+              },
+            );
+          }
+        },
+      ),
+    );
+  }
+
+  Widget _buildEmptyRecentRuns() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('최근 러닝', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+        SizedBox(height: 10),
+        Text('최근 러닝 기록이 없습니다.'),
+      ],
     );
   }
 
@@ -452,53 +470,56 @@ class _StatsScreenState extends State<StatsScreen> {
           child: AnimatedOpacity(
             opacity: _showRunningButtons ? 1.0 : 0.0,
             duration: Duration(milliseconds: 200),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                if (runningProvider.isRunning)
-                  InkWell(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => RunningSessionScreen(showCountdown: false)),
-                      );
-                    },
-                    child: Image.asset(
-                      'assets/images/start_run_btn.png', // 실제 이미지 경로로 변경
-                      width: 100, // 이미지 크기 조정
-                      height: 100,
-                    ),
-                  )
-                else
-                  ...[
+            child: IgnorePointer(
+              ignoring: !_showRunningButtons,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  if (runningProvider.isRunning)
                     InkWell(
-                      onTap: () {
+                      onTap: _showRunningButtons ? () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (context) => CourseDrawingScreen()),
+                          MaterialPageRoute(builder: (context) => RunningSessionScreen(showCountdown: false)),
                         );
-                      },
+                      } : null,
                       child: Image.asset(
-                        'assets/images/map_drawing_btn.png', // 실제 이미지 경로로 변경
-                        width: 100, // 이미지 크기 조정
+                        'assets/images/start_run_btn.png',
+                        width: 100,
                         height: 100,
                       ),
-                    ),
-                    InkWell(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (context) => RunningSessionScreen()),
-                        );
-                      },
-                      child: Image.asset(
-                        'assets/images/start_run_btn.png', // 실제 이미지 경로로 변경
-                        width: 100, // 이미지 크기 조정
-                        height: 100,
+                    )
+                  else
+                    ...[
+                      InkWell(
+                        onTap: _showRunningButtons ? () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => CourseDrawingScreen()),
+                          );
+                        } : null,
+                        child: Image.asset(
+                          'assets/images/map_drawing_btn.png',
+                          width: 100,
+                          height: 100,
+                        ),
                       ),
-                    ),
-                  ],
-              ],
+                      InkWell(
+                        onTap: _showRunningButtons ? () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => RunningSessionScreen()),
+                          );
+                        } : null,
+                        child: Image.asset(
+                          'assets/images/start_run_btn.png',
+                          width: 100,
+                          height: 100,
+                        ),
+                      ),
+                    ],
+                ],
+              ),
             ),
           ),
         );

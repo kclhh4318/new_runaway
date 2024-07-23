@@ -79,14 +79,12 @@ class RunningProvider with ChangeNotifier {
   }
 
   Future<Map<String, dynamic>> stopRunning() async {
-    if (!_isRunning || _sessionId == null) return {};
-
     _isRunning = false;
     _timer?.cancel();
     _positionStream?.cancel();
 
     final sessionData = {
-      "sessionId": _sessionId,
+      "sessionId": _sessionId ?? '',
       "distance": _distance,
       "duration": _seconds,
       "avgPace": _avgPace,
