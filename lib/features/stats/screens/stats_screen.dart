@@ -288,62 +288,76 @@ class _StatsScreenState extends State<StatsScreen> {
           ),
         ],
       ),
-      child: Row(
+      child: Stack(
         children: [
-          // 컨테이너는 코스이미지로 추후에 대체
-          Container(
-            width: 100,
-            height: 100,
-            decoration: BoxDecoration(
-              color: Colors.grey[300],
-              borderRadius: BorderRadius.circular(10),
-            ),
-          ),
-          SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(date, style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
-                SizedBox(height: 5),
-                Text('총 킬로미터', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                Text(
-                  distance,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 19,
-                    fontFamily: 'Giants',
-                    height: 1.2, // 위아래 자간 설정
-                  ),
+          Row(
+            children: [
+              // 컨테이너는 코스 이미지로 추후에 대체
+              Container(
+                width: 100,
+                height: 100,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(10),
                 ),
-                SizedBox(height: 5),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              ),
+              SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    Text(date, style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
+                    SizedBox(height: 5),
+                    Text('총 킬로미터', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                    Text(
+                      distance,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 19,
+                        fontFamily: 'Giants',
+                        height: 1.2, // 위아래 자간 설정
+                      ),
+                    ),
+                    SizedBox(height: 5),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text('시간', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                        Text(time, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, height: 1.2,))
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('시간', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                            Text(time, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, height: 1.2,))
+                          ],
+                        ),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('평균 페이스', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                            Text(pace, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, height: 1.2)),
+                          ],
+                        ),
+                        SizedBox(width: 13), // 평균 페이스를 왼쪽으로 이동시키기 위해 간격 조정
                       ],
                     ),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('평균 페이스', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                        Text(pace, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, height: 1.2)),
-                      ],
-                    ),
-                    SizedBox(width: 13), // 평균 페이스를 왼쪽으로 이동시키기 위해 간격 조정
                   ],
                 ),
-              ],
+              ),
+            ],
+          ),
+          Positioned(
+            top: 0,
+            right: 0,
+            child: Image.asset(
+              'assets/images/strength10.png', // 뱃지 이미지 경로
+              width: 27,
+              height: 27,
             ),
           ),
         ],
       ),
     );
   }
+
 
   Widget _buildMyDrawnCourses() {
     return Container(

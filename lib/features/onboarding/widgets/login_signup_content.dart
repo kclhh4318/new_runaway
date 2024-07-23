@@ -107,28 +107,53 @@ class _LoginSignupContentState extends State<LoginSignupContent> {
     );
   }
 
-  void _submit() async {
+  void _submit() {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
-
-      Map<String, dynamic> result;
-      if (_isLogin) {
-        result = await _authService.login(_username, _password);
-      } else {
-        result = await _authService.register(_username, _password);
-      }
-
-      logger.info('Auth result: $result');
-
-      if (result['success']) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => StatsScreen()),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(result['message'] ?? 'An error occurred')),
-        );
-      }
+      // 로그인 또는 회원가입 로직 구현 (서버 연동 전까지는 생략)
+      print('Username: $_username, Password: $_password, Mode: ${_isLogin ? "Login" : "Sign Up"}');
+      // 메인화면으로 이동
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (context) => StatsScreen()),
+      );
     }
   }
 }
+
+/*void _submit() {
+  if (_formKey.currentState!.validate()) {
+    _formKey.currentState!.save();
+    // 로그인 또는 회원가입 로직 구현 (서버 연동 전까지는 생략)
+    print('Username: $_username, Password: $_password, Mode: ${_isLogin ? "Login" : "Sign Up"}');
+    // 메인화면으로 이동
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(builder: (context) => StatsScreen()),
+    );
+  }
+}*/
+
+/*
+void _submit() async {
+  if (_formKey.currentState!.validate()) {
+    _formKey.currentState!.save();
+
+    Map<String, dynamic> result;
+    if (_isLogin) {
+      result = await _authService.login(_username, _password);
+    } else {
+      result = await _authService.register(_username, _password);
+    }
+
+    logger.info('Auth result: $result');
+
+    if (result['success']) {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (context) => StatsScreen()),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(result['message'] ?? 'An error occurred')),
+      );
+    }
+  }
+}*/
