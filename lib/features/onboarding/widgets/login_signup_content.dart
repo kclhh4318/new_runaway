@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:new_runaway/features/stats/screens/stats_screen.dart';
 import 'package:new_runaway/services/auth_service.dart';
+import 'package:new_runaway/utils/logger.dart';
 
 class LoginSignupContent extends StatefulWidget {
   const LoginSignupContent({Key? key}) : super(key: key);
@@ -110,27 +111,22 @@ class _LoginSignupContentState extends State<LoginSignupContent> {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
 
-      bool success;
+      Map<String, dynamic> result;
       if (_isLogin) {
-        success = await _authService.login(_username, _password);
+        result = await _authService.login(_username, _password);
       } else {
-        success = await _authService.register(_username, _password);
+        result = await _authService.register(_username, _password);
       }
 
-      if (success) {
-        final isLoggedIn = await _authService.isLoggedIn();
-        if (isLoggedIn) {
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (context) => StatsScreen()),
-          );
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('로그인 처리 중 오류가 발생했습니다.')),
-          );
-        }
+      logger.info('Auth result: $result');
+
+      if (result['success']) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (context) => StatsScreen()),
+        );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(_isLogin ? '로그인에 실패했습니다.' : '회원가입에 실패했습니다.')),
+          SnackBar(content: Text(result['message'] ?? 'An error occurred')),
         );
       }
     }
