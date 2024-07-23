@@ -87,7 +87,6 @@ class _RunResultScreenState extends State<RunResultScreen> {
     );
   }
 
-
   Widget _buildResultItem(String label, String value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
@@ -101,6 +100,16 @@ class _RunResultScreenState extends State<RunResultScreen> {
     );
   }
 
+  void _updateIntensity(Offset localPosition, RenderBox box) {
+    double localDx = box.globalToLocal(localPosition).dx;
+    int newIntensity = ((localDx / box.size.width) * 10).round();
+    if (newIntensity < 1) newIntensity = 1;
+    if (newIntensity > 10) newIntensity = 10;
+    setState(() {
+      _runningIntensity = newIntensity;
+    });
+  }
+
   Widget _buildRunningIntensity() {
     return Padding(
       padding: const EdgeInsets.all(16.0),
@@ -112,13 +121,11 @@ class _RunResultScreenState extends State<RunResultScreen> {
           GestureDetector(
             onTapUp: (details) {
               RenderBox box = context.findRenderObject() as RenderBox;
-              double localDx = box.globalToLocal(details.globalPosition).dx;
-              int newIntensity = ((localDx / box.size.width) * 10).round();
-              if (newIntensity < 1) newIntensity = 1;
-              if (newIntensity > 10) newIntensity = 10;
-              setState(() {
-                _runningIntensity = newIntensity;
-              });
+              _updateIntensity(details.globalPosition, box);
+            },
+            onPanUpdate: (details) {
+              RenderBox box = context.findRenderObject() as RenderBox;
+              _updateIntensity(details.globalPosition, box);
             },
             child: Container(
               height: 100, // 막대의 높이를 늘려 직사각형으로 만듦

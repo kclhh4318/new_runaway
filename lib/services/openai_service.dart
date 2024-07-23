@@ -20,7 +20,7 @@ class OpenAIService {
         'messages': [
           {
             'role': 'system',
-            'content': 'You are a helpful assistant that recommends running courses based on user-drawn routes. You have to separate the sidewalk from the roadway on map and make a running course based on the sidewalk.'
+            'content': 'You are a helpful assistant that recommends running courses based on user-drawn routes.'
           },
           {
             'role': 'user',
