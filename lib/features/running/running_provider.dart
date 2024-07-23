@@ -10,8 +10,7 @@ class RunningProvider with ChangeNotifier {
   double _avgPace = 0.0;
   double _currentPace = 0.0;
   List<LatLng> _routePoints = [];
-
-  List<LatLng> get routePoints => _routePoints;
+  List<LatLng>? _predefinedCourse;
 
   void setInitialRoute(List<LatLng> initialRoute) {
     _routePoints = List.from(initialRoute);
@@ -26,6 +25,7 @@ class RunningProvider with ChangeNotifier {
   double get distance => _distance;
   double get avgPace => _avgPace;
   double get currentPace => _currentPace;
+  List<LatLng> get routePoints => _routePoints;
 
   void resetSession() {
     _isRunning = false;
@@ -34,15 +34,16 @@ class RunningProvider with ChangeNotifier {
     _avgPace = 0.0;
     _currentPace = 0.0;
     _routePoints = [];
+    _predefinedCourse = null;
     _timer?.cancel();
     _positionStream?.cancel();
-    notifyListeners();
   }
 
-  Future<void> startRunning() async {
+  Future<void> startRunning({List<LatLng>? predefinedCourse}) async {
     if (_isRunning) return;
 
     resetSession();
+    _predefinedCourse = predefinedCourse;
 
     try {
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();

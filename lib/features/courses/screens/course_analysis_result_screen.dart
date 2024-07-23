@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:new_runaway/features/courses/course_provider.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:new_runaway/features/running/screens/running_session_screen.dart';
+import 'package:new_runaway/features/running/widgets/countdown_timer.dart';
 
 class CourseAnalysisResultScreen extends StatelessWidget {
   @override
@@ -46,13 +48,16 @@ class CourseAnalysisResultScreen extends StatelessWidget {
                   children: [
                     ElevatedButton(
                       onPressed: () {
-                        // TODO: 러닝 세션 시작 로직 구현
+                        _showCountdownAndStartRunning(context, recommendedCourse!.points);
                       },
                       child: Text('GO!'),
                     ),
                     ElevatedButton(
-                      onPressed: () {
-                        courseProvider.reanalyze();
+                      onPressed: () async {
+                        await courseProvider.reanalyze();
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('코스가 재분석되었습니다.')),
+                        );
                       },
                       child: Text('재분석'),
                     ),
@@ -63,6 +68,30 @@ class CourseAnalysisResultScreen extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+
+  void _showCountdownAndStartRunning(BuildContext context, List<LatLng> coursePoints) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return Dialog(
+          child: CountdownTimer(
+            onFinished: () {
+              Navigator.of(context).pop(); // Close the dialog
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => RunningSessionScreen(
+                    showCountdown: false,
+                    predefinedCourse: coursePoints,
+                  ),
+                ),
+              );
+            },
+          ),
+        );
+      },
     );
   }
 }

@@ -1,21 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:new_runaway/config/google_maps_config.dart';
 
 class RunMap extends StatelessWidget {
   final List<LatLng> routePoints;
-  final List<LatLng>? initialRoute;
+  final List<LatLng>? predefinedCourse;
 
   const RunMap({
     Key? key,
     required this.routePoints,
-    this.initialRoute,
+    this.predefinedCourse,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    print('Building RunMap widget');
-    print('Route points: $routePoints');
     return GoogleMap(
       initialCameraPosition: CameraPosition(
         target: routePoints.isNotEmpty ? routePoints.last : LatLng(37.5665, 126.9780),
@@ -28,10 +25,10 @@ class RunMap extends StatelessWidget {
           color: Colors.red,
           width: 4,
         ),
-        if (initialRoute != null)
+        if (predefinedCourse != null)
           Polyline(
-            polylineId: PolylineId('initial_route'),
-            points: initialRoute!,
+            polylineId: PolylineId('predefined_course'),
+            points: predefinedCourse!,
             color: Colors.blue,
             width: 4,
           ),
