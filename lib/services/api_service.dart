@@ -158,13 +158,37 @@ class ApiService {
   Future<List<RunningSession>> getRecentRuns(String userId) async {
     try {
       final response = await get('running_sessions/runs/$userId');
-      if (response == null) {
-        return []; // 응답이 null인 경우 빈 리스트 반환
+      print('Raw response: $response');
+      if (response == null || response is! List) {
+        print('Unexpected response type: ${response.runtimeType}');
+        return [];
       }
-      return (response as List).map((json) => RunningSession.fromJson(json)).toList();
+      return response.map((json) {
+        try {
+          return RunningSession.fromJson(json);
+        } catch (e) {
+          print('Error parsing RunningSession: $e');
+          print('Problematic JSON: $json');
+          return null;
+        }
+      }).whereType<RunningSession>().toList();
     } catch (e) {
       print('Error getting recent runs: $e');
-      return []; // 에러 발생 시 빈 리스트 반환
+      return [];
+    }
+  }
+
+  Future<List<RunningSession>> getAllRuns(String userId) async {
+    try {
+      final response = await get('running_sessions/all_runs/$userId');
+      if (response == null || response is! List) {
+        print('Unexpected response type: ${response.runtimeType}');
+        return [];
+      }
+      return response.map((json) => RunningSession.fromJson(json)).toList();
+    } catch (e) {
+      print('Error getting all runs: $e');
+      return [];
     }
   }
 

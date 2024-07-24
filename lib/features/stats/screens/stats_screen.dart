@@ -9,6 +9,8 @@ import 'package:new_runaway/models/running_session.dart';
 import 'package:new_runaway/services/api_service.dart';
 import 'package:new_runaway/services/storage_service.dart';
 
+import 'all_runs_screen.dart';
+
 class StatsScreen extends StatefulWidget {
   const StatsScreen({Key? key}) : super(key: key);
 
@@ -254,52 +256,31 @@ class _StatsScreenState extends State<StatsScreen> {
       child: FutureBuilder<String?>(
         future: StorageService().getUserId(),
         builder: (context, userIdSnapshot) {
-          if (!userIdSnapshot.hasData || userIdSnapshot.data == null) {
-            return _buildEmptyRecentRuns();
-          } else {
-            final userId = userIdSnapshot.data!;
-            return FutureBuilder<List<RunningSession>>(
-              future: apiService.getRecentRuns(userId),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('최근 러닝', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                      SizedBox(height: 10),
-                      CircularProgressIndicator(),
-                    ],
-                  );
-                } else if (snapshot.hasError) {
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('최근 러닝', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                      SizedBox(height: 10),
-                      Text('Error: ${snapshot.error}'),
-                    ],
-                  );
-                } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                  return _buildEmptyRecentRuns();
-                } else {
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('최근 러닝', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                      SizedBox(height: 10),
-                      ...snapshot.data!.map((run) => _buildRecentRunItem(
-                        run.date.toString().substring(0, 10),
-                        '${run.distance.toStringAsFixed(2)} km',
-                        _formatDuration(run.duration),
-                        _formatPace(run.averagePace),
-                        run.strength,
-                      )),
-                    ],
-                  );
-                }
-              },
-            );
-          }
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('최근 러닝', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  TextButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => AllRunsScreen()),
+                      );
+                    },
+                    child: Text('더보기'),
+                  ),
+                ],
+              ),
+              SizedBox(height: 10),
+              if (!userIdSnapshot.hasData || userIdSnapshot.data == null)
+                _buildEmptyRecentRuns()
+              else
+                _buildRecentRunsList(context, apiService, userIdSnapshot.data!),
+            ],
+          );
         },
       ),
     );
@@ -313,6 +294,31 @@ class _StatsScreenState extends State<StatsScreen> {
         SizedBox(height: 10),
         Text('최근 러닝 기록이 없습니다.'),
       ],
+    );
+  }
+
+  Widget _buildRecentRunsList(BuildContext context, ApiService apiService, String userId) {
+    return FutureBuilder<List<RunningSession>>(
+      future: apiService.getRecentRuns(userId),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return _buildLoadingRecentRuns();
+        } else if (snapshot.hasError) {
+          return _buildErrorRecentRuns(snapshot.error.toString());
+        } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+          return _buildEmptyRecentRuns();
+        } else {
+          return Column(
+            children: snapshot.data!.take(3).map((run) => _buildRecentRunItem(
+              run.date.toString().substring(0, 10),
+              '${run.distance.toStringAsFixed(2)} km',
+              _formatDuration(run.duration),
+              _formatPace(run.averagePace),
+              run.strength,
+            )).toList(),
+          );
+        }
+      },
     );
   }
 
@@ -539,4 +545,27 @@ class _StatsScreenState extends State<StatsScreen> {
     final seconds = (paceInSeconds % 60).toInt();
     return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
   }
+
+  Widget _buildLoadingRecentRuns() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('최근 러닝', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+        SizedBox(height: 10),
+        Center(child: CircularProgressIndicator()),
+      ],
+    );
+  }
+
+  Widget _buildErrorRecentRuns(String error) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('최근 러닝', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+        SizedBox(height: 10),
+        Text('Error: $error'),
+      ],
+    );
+  }
+
 }
