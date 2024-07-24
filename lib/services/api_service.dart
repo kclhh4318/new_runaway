@@ -4,6 +4,7 @@ import 'package:new_runaway/config/app_config.dart';
 import 'package:new_runaway/services/token_service.dart';
 import 'package:new_runaway/services/storage_service.dart';
 import 'package:new_runaway/utils/logger.dart';
+import 'package:new_runaway/models/running_session.dart';
 
 class ApiService {
   final String baseUrl = AppConfig.apiBaseUrl;
@@ -24,7 +25,7 @@ class ApiService {
       allHeaders.addAll(headers);
     }
     logger.info('Request headers: $allHeaders');
-    logger.info('Request body: $data');
+    logger.info('Request body: ${json.encode(data)}');
 
     final response = await http.post(
       Uri.parse('$baseUrl/$endpoint'),
@@ -38,12 +39,16 @@ class ApiService {
     return response;
   }
 
-
   Future<Map<String, String>> _getHeaders() async {
     final accessToken = await _tokenService.getAccessToken();
+    final userId = await _storageService.getUserId();
+
+    logger.info('Getting headers. User ID: $userId');
+
     return {
       'Content-Type': 'application/json',
       if (accessToken != null) 'Authorization': 'Bearer $accessToken',
+      if (userId != null) 'x-user-id': userId,
     };
   }
 
@@ -147,6 +152,19 @@ class ApiService {
       return json.decode(response.body);
     } else {
       throw Exception('Failed to register: ${response.statusCode}');
+    }
+  }
+
+  Future<List<RunningSession>> getRecentRuns(String userId) async {
+    try {
+      final response = await get('running_sessions/runs/$userId');
+      if (response == null) {
+        return []; // 응답이 null인 경우 빈 리스트 반환
+      }
+      return (response as List).map((json) => RunningSession.fromJson(json)).toList();
+    } catch (e) {
+      print('Error getting recent runs: $e');
+      return []; // 에러 발생 시 빈 리스트 반환
     }
   }
 

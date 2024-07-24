@@ -1,4 +1,5 @@
 import 'package:shared_preferences/shared_preferences.dart';
+import '../utils/logger.dart';
 
 class StorageService {
   Future<void> saveString(String key, String value) async {
@@ -21,7 +22,10 @@ class StorageService {
   }
 
   Future<String?> getUserId() async {
-    return getString('userId');
+    final prefs = await SharedPreferences.getInstance();
+    final userId = prefs.getString('userId');
+    logger.info('Retrieved user ID from storage: $userId');
+    return userId;
   }
 
   Future<void> printSavedTokens() async {

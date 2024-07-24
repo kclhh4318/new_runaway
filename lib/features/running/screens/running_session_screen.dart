@@ -186,17 +186,28 @@ class _RunningSessionScreenState extends State<RunningSessionScreen> {
   }
 
   Future<void> _stopRunning(RunningProvider provider) async {
-    await provider.stopRunning();
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        builder: (context) => RunResultScreen(
-          distance: provider.distance,
-          duration: provider.seconds,
-          avgPace: provider.avgPace,
-          route: provider.routePoints,
+    final sessionData = await provider.stopRunning();
+    if (sessionData['sessionId'] != null && sessionData['sessionId'].isNotEmpty) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => RunResultScreen(
+            sessionId: sessionData['sessionId'],
+            distance: sessionData['distance'],
+            duration: sessionData['duration'],
+            avgPace: sessionData['avgPace'],
+            currentPace: sessionData['currentPace'],
+            route: sessionData['route'],
+          ),
         ),
-      ),
-    );
+      );
+    } else {
+      // sessionId가 없는 경우 처리
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('러닝 세션을 종료할 수 없습니다. 다시 시도해주세요.')),
+      );
+      // 세션 리셋
+      provider.resetSession();
+    }
   }
 }

@@ -11,6 +11,7 @@ import 'package:new_runaway/features/courses/screens/course_analysis_result_scre
 import 'package:new_runaway/services/session_service.dart';
 import 'package:new_runaway/features/stats/screens/stats_screen.dart';
 import 'package:new_runaway/utils/logger.dart';
+import 'package:new_runaway/services/api_service.dart';
 
 void main() async {
   setupLogger();
@@ -61,6 +62,7 @@ class MyApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (_) => RunningProvider()),
         ChangeNotifierProvider(create: (_) => CourseProvider()),
+        Provider<ApiService>(create: (_) => ApiService()), // 추가된 부분
       ],
       child: MaterialApp(
         title: 'Runaway',
