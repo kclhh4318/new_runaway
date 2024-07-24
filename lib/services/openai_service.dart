@@ -13,13 +13,13 @@ class OpenAIService {
     try {
       logger.info('Sending request to OpenAI API');
       final response = await http.post(
-        Uri.parse('$baseUrl/chat/completions'),
+        Uri.parse('$baseUrl/completions'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $apiKey',
         },
         body: jsonEncode({
-          'model': 'gpt-4',
+          'model': 'gpt-4o',
           'messages': [
             {
               'role': 'system',
@@ -30,12 +30,11 @@ class OpenAIService {
               'content': prompt
             }
           ],
+          'max_tokens': 1000,
         }),
       );
 
       logger.info('Received response from OpenAI API: ${response.statusCode}');
-
-      logger.info('Response body: ${response.body}');
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -45,8 +44,6 @@ class OpenAIService {
 
         // Remove any markdown formatting if present
         content = content.replaceAll(RegExp(r'```json\n?'), '').replaceAll(RegExp(r'\n?```'), '');
-
-        content = _fixIncompleteJson(content);
 
         // Validate JSON
         try {
@@ -66,21 +63,4 @@ class OpenAIService {
       rethrow;
     }
   }
-
-  String _fixIncompleteJson(String jsonString) {
-    // 마지막 중괄호와 대괄호를 찾아 닫아줍니다.
-    int openBraces = jsonString.split('{').length - jsonString.split('}').length;
-    int openBrackets = jsonString.split('[').length - jsonString.split(']').length;
-
-    String fixedJson = jsonString;
-    for (int i = 0; i < openBraces; i++) {
-      fixedJson += '}';
-    }
-    for (int i = 0; i < openBrackets; i++) {
-      fixedJson += ']';
-    }
-
-    return fixedJson;
-  }
-
 }

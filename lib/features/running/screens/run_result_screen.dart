@@ -1,9 +1,14 @@
+import 'dart:io';
+import 'dart:typed_data'; // 이 부분을 수정합니다.
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:provider/provider.dart';
 import 'package:new_runaway/features/running/running_provider.dart';
 import 'package:new_runaway/features/running/widgets/run_map.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:new_runaway/services/api_service.dart';
+import 'package:path_provider/path_provider.dart'; // 이 부분을 추가합니다.
 import '../../../utils/logger.dart';
 
 class RunResultScreen extends StatefulWidget {
@@ -33,6 +38,7 @@ class RunResultScreen extends StatefulWidget {
 class _RunResultScreenState extends State<RunResultScreen> {
   int _runningIntensity = 5;
   final ApiService _apiService = ApiService();
+  final GlobalKey _globalKey = GlobalKey(); // 글로벌 키 추가
 
   @override
   void initState() {
@@ -41,21 +47,10 @@ class _RunResultScreenState extends State<RunResultScreen> {
       // 화면이 렌더링 된 후에 필요한 초기 작업을 수행할 수 있습니다.
     });
   }
-/*
-  Future<void> _sendSessionEndRequest() async {
-    final runningProvider = context.read<RunningProvider>();
-    logger.info('Sending session end request');
-    logger.info('Session ID: ${runningProvider.sessionId}');
 
-    await runningProvider.endRunningSession(
-      distance: widget.distance,
-      duration: widget.duration,
-      avgPace: widget.avgPace,
-      route: widget.route,
-      intensity: _runningIntensity,
-    );
-  }
-*/
+
+
+
   @override
   Widget build(BuildContext context) {
     return WillPopScope(
@@ -112,6 +107,29 @@ class _RunResultScreenState extends State<RunResultScreen> {
     setState(() {
       _runningIntensity = newIntensity;
     });
+  }
+
+  Future<String> saveImage(Uint8List bytes, String sessionId) async {
+    final directory = await getApplicationDocumentsDirectory();
+    final imagePath = '${directory.path}/$sessionId.png';
+    File imageFile = File(imagePath);
+    await imageFile.writeAsBytes(bytes.toList()); // Uint8List를 List<int>로 변환
+    return imagePath;
+  }
+
+  Future<Uint8List> _capturePng() async {
+    try {
+      RenderRepaintBoundary boundary = _globalKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
+      ui.Image image = await boundary.toImage(pixelRatio: 1.0);
+      ByteData? byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+      Uint8List pngBytes = byteData!.buffer.asUint8List();
+      print('Captured PNG size: ${pngBytes.length} bytes');
+      print('First 10 bytes of captured image: ${pngBytes.sublist(0, 10)}');
+      return pngBytes;
+    } catch (e) {
+      logger.severe('Error capturing PNG: $e');
+      return Uint8List(0);
+    }
   }
 
   Widget _buildRunningIntensity() {
@@ -224,6 +242,8 @@ class _RunResultScreenState extends State<RunResultScreen> {
   }
 
   Future<void> _endRunningSession() async {
+    final Uint8List pngBytes = await _capturePng();
+    final imagePath = await saveImage(pngBytes, widget.sessionId);
     final sessionData = {
       "distance": widget.distance,
       "duration": widget.duration,
@@ -235,6 +255,7 @@ class _RunResultScreenState extends State<RunResultScreen> {
       }).toList(),
       "strength": _runningIntensity,
       "course_id": widget.courseId,
+      "course_type": 1,  // 다른 사람의 코스로 달렸을 때 1로 설정
     };
 
     logger.info('Ending running session');

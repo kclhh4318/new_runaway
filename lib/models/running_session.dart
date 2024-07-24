@@ -5,6 +5,7 @@ class RunningSession {
   final int duration;
   final double averagePace;
   final int strength;
+  final String? imagePath; // 여기에 imagePath 속성을 추가합니다.
 
   RunningSession({
     required this.id,
@@ -13,6 +14,7 @@ class RunningSession {
     required this.duration,
     required this.averagePace,
     required this.strength,
+    this.imagePath, // 생성자에 imagePath를 추가합니다.
   });
 
   factory RunningSession.fromJson(Map<String, dynamic> json) {

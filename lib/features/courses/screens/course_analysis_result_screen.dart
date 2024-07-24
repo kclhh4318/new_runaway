@@ -149,8 +149,8 @@ class CourseAnalysisResultScreen extends StatelessWidget {
 
     try {
       logger.info('Attempting to create course');
-      // 코스 생성 API 호출 (course_type을 0으로 설정, 필요에 따라 변경 가능)
-      final courseId = await courseProvider.createCourse(coursePoints, base64Image, 0);
+      // 코스 생성 API 호출 (course_type을 1로 설정, 다른 사람의 코스를 사용하므로)
+      final courseId = await courseProvider.createCourse(coursePoints, base64Image, 1);
       logger.info('Course created successfully. Course ID: $courseId');
 
       if (courseId != null && courseId.isNotEmpty) {
@@ -184,9 +184,12 @@ class CourseAnalysisResultScreen extends StatelessWidget {
   Future<Uint8List> _capturePng() async {
     try {
       RenderRepaintBoundary boundary = _globalKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
-      ui.Image image = await boundary.toImage(pixelRatio: 3.0);
+      ui.Image image = await boundary.toImage(pixelRatio: 1.0);
       ByteData? byteData = await image.toByteData(format: ui.ImageByteFormat.png);
-      return byteData!.buffer.asUint8List();
+      Uint8List pngBytes = byteData!.buffer.asUint8List();
+      print('Captured PNG size: ${pngBytes.length} bytes');
+      print('First 10 bytes of captured image: ${pngBytes.sublist(0, 10)}');
+      return pngBytes;
     } catch (e) {
       logger.severe('Error capturing PNG: $e');
       return Uint8List(0);

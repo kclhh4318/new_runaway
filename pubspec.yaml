@@ -20,6 +20,7 @@ dependencies:
   flutter_polyline_points: ^1.0.0
   logging: ^1.0.2
   mongo_dart: ^0.9.1  # 추가된 종속성
+  path_provider: ^2.0.9
 
 dev_dependencies:
   flutter_test:

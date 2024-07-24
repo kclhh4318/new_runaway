@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
@@ -235,7 +236,6 @@ class _StatsScreenState extends State<StatsScreen> {
     );
   }
 
-
   Widget _buildDateFilter() {
     return Padding(
       padding: const EdgeInsets.all(16.0),
@@ -277,7 +277,6 @@ class _StatsScreenState extends State<StatsScreen> {
       ),
     );
   }
-
 
   Widget _buildCourseStatistics() {
     return FutureBuilder<String?>(
@@ -393,6 +392,7 @@ class _StatsScreenState extends State<StatsScreen> {
               _formatDuration(run.duration),
               _formatPace(run.averagePace),
               run.strength,
+              run.imagePath, // 여기에서 imagePath 전달
             )).toList(),
           );
         }
@@ -400,7 +400,7 @@ class _StatsScreenState extends State<StatsScreen> {
     );
   }
 
-  Widget _buildRecentRunItem(String date, String distance, String time, String pace, int strength) {
+  Widget _buildRecentRunItem(String date, String distance, String time, String pace, int strength, String? imagePath) {
     String badgeImage;
     if (strength >= 1 && strength <= 3) {
       badgeImage = 'assets/images/strength1-3.png';
@@ -415,86 +415,85 @@ class _StatsScreenState extends State<StatsScreen> {
     }
 
     return Container(
-      margin: EdgeInsets.only(bottom: 10),
-      padding: EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(15),
-        boxShadow: const [
-          BoxShadow(
-            color: Colors.black26,
-            blurRadius: 10,
-            offset: Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Stack(
-        children: [
-          Row(
-            children: [
-              // 컨테이너는 코스 이미지로 추후에 대체
-              Container(
-                width: 100,
-                height: 100,
-                decoration: BoxDecoration(
-                  color: Colors.grey[300],
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-              SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(date, style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
-                    SizedBox(height: 5),
-                    Text('총 킬로미터', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                    Text(
-                      distance,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 19,
-                        fontFamily: 'Giants',
-                        height: 1.2, // 위아래 자간 설정
-                      ),
-                    ),
-                    SizedBox(height: 5),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('시간', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                            Text(time, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, height: 1.2,))
-                          ],
-                        ),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('평균 페이스', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                            Text(pace, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, height: 1.2)),
-                          ],
-                        ),
-                        SizedBox(width: 13), // 평균 페이스를 왼쪽으로 이동시키기 위해 간격 조정
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          Positioned(
-            top: 0,
-            right: 0,
-            child: Image.asset(
-              badgeImage, // 뱃지 이미지 경로
-              width: 45,
-              height: 45,
+        margin: EdgeInsets.only(bottom: 10),
+        padding: EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(15),
+          boxShadow: const [
+            BoxShadow(
+              color: Colors.black26,
+              blurRadius: 10,
+              offset: Offset(0, 4),
             ),
-          ),
+          ],
+        ),
+        child: Stack(
+          children: [
+        Row(
+        children: [
+        // 컨테이너는 코스 이미지로 추후에 대체
+        Container(
+        width: 100,
+          height: 100,
+          child: imagePath != null
+              ? Image.file(File(imagePath), fit: BoxFit.cover)
+              : Container(color: Colors.grey[300]),
+        ),
+        SizedBox(width: 10),
+        Expanded(
+        child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+        Text(date, style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
+    SizedBox(height: 5),
+    Text('총 킬로미터', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+    Text(
+    distance,
+    style: const TextStyle(
+    fontWeight: FontWeight.bold,
+    fontSize: 19,
+    fontFamily: 'Giants',
+    height: 1.2, // 위아래 자간 설정
+    ),
+    ),
+    SizedBox(height: 5),
+    Row(
+    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    children: [
+    Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+    Text('시간', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+    Text(time, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, height: 1.2))
+    ],
+    ),
+    Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text('평균 페이스', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+      Text(pace, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, height: 1.2)),
+    ],
+    ),
+      SizedBox(width: 13), // 평균 페이스를 왼쪽으로 이동시키기 위해 간격 조정
+    ],
+    ),
         ],
-      ),
+        ),
+        ),
+        ],
+        ),
+            Positioned(
+              top: 0,
+              right: 0,
+              child: Image.asset(
+                badgeImage, // 뱃지 이미지 경로
+                width: 45,
+                height: 45,
+              ),
+            ),
+          ],
+        ),
     );
   }
 
@@ -532,7 +531,6 @@ class _StatsScreenState extends State<StatsScreen> {
           ),
           SizedBox(height: 5),
           Text(
-            // '${index + 1}234명', // 이 텍스트는 각 항목에 고유한 인덱스를 추가하여 다르게 표시할 수 있습니다.
             '1111명',
             style: TextStyle(
               fontSize: 10,
@@ -641,5 +639,5 @@ class _StatsScreenState extends State<StatsScreen> {
       ],
     );
   }
-
 }
+

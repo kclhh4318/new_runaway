@@ -18,6 +18,7 @@ class RecommendedCourse {
   });
 
   factory RecommendedCourse.fromJson(Map<String, dynamic> json) {
+    print('Received JSON for RecommendedCourse: $json'); // 로그 추가
     return RecommendedCourse(
       points: (json['coordinates'] as List).map((point) {
         return LatLng(point['latitude'] as double, point['longitude'] as double);
@@ -26,7 +27,7 @@ class RecommendedCourse {
       description: json['description'] as String,
       safetyTips: (json['safetyTips'] as List).cast<String>(),
       pointsOfInterest: (json['pointsOfInterest'] as List?)?.cast<String>() ?? ['관심 지점 정보가 없습니다.'],
-      route: json['route'] as String?,  // 추가된 부분
+      route: json['route'] as String?,
     );
   }
 }

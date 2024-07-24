@@ -9,6 +9,9 @@ import 'package:new_runaway/services/api_service.dart';
 import 'package:new_runaway/models/recommended_course.dart';
 import 'package:new_runaway/models/course.dart'; // Course 클래스를 import
 import 'package:new_runaway/features/courses/screens/course_analysis_result_screen.dart';
+import 'dart:typed_data';
+import 'dart:ui' as ui;
+import 'package:new_runaway/utils/image_cache.dart';
 
 class CourseDrawingScreen extends StatefulWidget {
   const CourseDrawingScreen({Key? key}) : super(key: key);
@@ -170,58 +173,7 @@ class _CourseDrawingScreenState extends State<CourseDrawingScreen> {
                   ],
                 ),
                 SizedBox(height: 16),
-                Container(
-                  height: 100,
-                  child: _recommendedCourses.isEmpty
-                      ? Center(child: Text("아직 주변에 코스그리기를 통해 달린 사람이 없다모!"))
-                      : ListView.builder(
-                    scrollDirection: Axis.horizontal,
-                    itemCount: _recommendedCourses.length,
-                    itemBuilder: (context, index) {
-                      final course = _recommendedCourses[index];
-                      return GestureDetector(
-                        onTap: () => _showCourseConfirmationDialog(course),
-                        child: Container(
-                          width: 100,
-                          margin: EdgeInsets.only(right: 10),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(color: Colors.grey),
-                          ),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Expanded(
-                                child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(10),
-                                  child: course.route != null
-                                      ? base64ToImage(course.route!)
-                                      : Container(
-                                    color: Colors.grey[300],
-                                    child: Icon(Icons.image_not_supported),
-                                  ),
-                                ),
-                              ),
-                              SizedBox(height: 4),
-                              Text(
-
-                                '${course.distance.toStringAsFixed(2)} km',
-
-                                style: TextStyle(fontWeight: FontWeight.bold),
-                              ),
-                              SizedBox(height: 4),
-                              Text(
-                                '추천 ${course.pointsOfInterest.length}',
-
-                                style: TextStyle(fontSize: 12),
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
+                _buildRecommendedCourses(),
               ],
             ),
           ),
@@ -234,16 +186,98 @@ class _CourseDrawingScreenState extends State<CourseDrawingScreen> {
     );
   }
 
-  Image base64ToImage(String base64String) {
-    return Image.memory(
-      base64Decode(base64String),
-      fit: BoxFit.cover,
-      errorBuilder: (context, error, stackTrace) {
-        return Container(
-          color: Colors.grey[300],
-          child: Icon(Icons.error),
-        );
-      },
+  Future<Widget> base64ToImage(String base64String) async {
+    try {
+      final image = await Base64ImageCache.getImage(base64String, 200, 200);  // 클래스 이름을 변경했다모
+      print('Image size: ${image.width}x${image.height}');
+
+      return RawImage(
+        image: image,
+        fit: BoxFit.cover,
+      );
+    } catch (e) {
+      print('Error decoding base64 image: $e');
+      return Container(
+        color: Colors.grey[300],
+        child: Icon(Icons.error),
+      );
+    }
+  }
+
+  Widget _buildRecommendedCourses() {
+    return Container(
+      height: 100,
+      child: _recommendedCourses.isEmpty
+          ? Center(child: Text("아직 주변에 코스그리기를 통해 달린 사람이 없다모!"))
+          : ListView.builder(
+        scrollDirection: Axis.horizontal,
+        itemCount: _recommendedCourses.length,
+        itemBuilder: (context, index) {
+          final course = _recommendedCourses[index];
+          return _buildCourseItem(course);
+        },
+      ),
+    );
+  }
+
+  Widget _buildCourseItem(RecommendedCourse course) {
+    return GestureDetector(
+      onTap: () => _showCourseConfirmationDialog(course),
+      child: Container(
+        width: 100,
+        margin: EdgeInsets.only(right: 10),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: Colors.grey),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Expanded(
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: course.route != null && course.route!.isNotEmpty
+                    ? FutureBuilder<Widget>(
+                  future: base64ToImage(course.route!),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.done && snapshot.hasData) {
+                      return Container(
+                        color: Colors.white, // 배경색을 흰색으로 설정
+                        child: snapshot.data!,
+                      );
+                    } else if (snapshot.hasError) {
+                      print('Error loading image: ${snapshot.error}');
+                      return Container(
+                        color: Colors.red, // 에러 시 빨간색 배경
+                        child: Icon(Icons.error),
+                      );
+                    } else {
+                      return Container(
+                        color: Colors.yellow, // 로딩 중 노란색 배경
+                        child: CircularProgressIndicator(),
+                      );
+                    }
+                  },
+                )
+                    : Container(
+                  color: Colors.grey[300],
+                  child: Icon(Icons.image_not_supported),
+                ),
+              ),
+            ),
+            SizedBox(height: 4),
+            Text(
+              '${course.distance.toStringAsFixed(2)} km',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 4),
+            Text(
+              '추천 ${course.pointsOfInterest.length}',
+              style: TextStyle(fontSize: 12),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
