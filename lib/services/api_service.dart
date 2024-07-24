@@ -168,4 +168,29 @@ class ApiService {
     }
   }
 
+  Future<Map<String, dynamic>> getStats(String period, String userId) async {
+    String endpoint;
+    switch (period) {
+      case '주':
+        endpoint = 'stats/weekly/$userId';
+        break;
+      case '월':
+        endpoint = 'stats/monthly/$userId';
+        break;
+      case '년':
+        endpoint = 'stats/yearly/$userId';
+        break;
+      case '전체':
+      default:
+        endpoint = 'stats/all_time/$userId';
+    }
+    final response = await http.get(Uri.parse('${AppConfig.apiBaseUrl}/$endpoint'));
+
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    } else {
+      throw Exception('Failed to load statistics');
+    }
+  }
+
 }

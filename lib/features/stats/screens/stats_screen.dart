@@ -31,6 +31,9 @@ class _StatsScreenState extends State<StatsScreen> {
 
   double _totalDistance = 0;
   int _totalDuration = 0;
+  double _averagePace = 0;
+  int _totalRuns = 0;
+  double _averageDistance = 0;
 
   final ApiService _apiService = ApiService();
   final StorageService _storageService = StorageService();
@@ -39,7 +42,7 @@ class _StatsScreenState extends State<StatsScreen> {
   void initState() {
     super.initState();
     _scrollController.addListener(_scrollListener);
-    _fetchAllTimeStats();
+    _fetchStats();
   }
 
   void _scrollListener() {
@@ -50,24 +53,26 @@ class _StatsScreenState extends State<StatsScreen> {
     }
   }
 
-  Future<void> _fetchAllTimeStats() async {
+  Future<void> _fetchStats() async {
     try {
       final userId = await _storageService.getUserId();
-      final response = await _apiService.get('stats/all_time/$userId');
+      if (userId == null) {
+        throw Exception('User ID not found');
+      }
+      final response = await _apiService.getStats(_selectedPeriod, userId);
+      print('API response: $response'); // 디버깅을 위한 로깅
+
       setState(() {
-        _totalDistance = response['total_distance']['distance'];
-        _totalDuration = response['total_distance']['duration'];
+        _totalDistance = response[_selectedPeriod == '전체' ? 'totally' : _selectedPeriod.toLowerCase()]['distance'];
+        _totalDuration = response[_selectedPeriod == '전체' ? 'totally' : _selectedPeriod.toLowerCase()]['duration'];
+        _averagePace = response[_selectedPeriod == '전체' ? 'totally' : _selectedPeriod.toLowerCase()]['average_pace'];
+        _totalRuns = response[_selectedPeriod == '전체' ? 'totally' : _selectedPeriod.toLowerCase()]['count'];
+        _averageDistance = _totalRuns == 0 ? 0 : _totalDistance / _totalRuns;
       });
     } catch (e) {
-      // Handle error
-      print('Failed to load statistics: $e');
+      // 에러 핸들링
+      print('통계 정보를 가져오지 못했습니다: $e');
     }
-  }
-
-  String _formatDuration(int seconds) {
-    final hours = seconds ~/ 3600;
-    final minutes = (seconds % 3600) ~/ 60;
-    return '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}';
   }
 
   @override
@@ -89,6 +94,7 @@ class _StatsScreenState extends State<StatsScreen> {
                         onPeriodSelected: (period) {
                           setState(() {
                             _selectedPeriod = period;
+                            _fetchStats(); // 새로운 기간 선택 시 데이터 가져오기
                           });
                         },
                       ),
@@ -132,9 +138,9 @@ class _StatsScreenState extends State<StatsScreen> {
                   fontStyle: FontStyle.italic,
                 ),
               ),
-              SizedBox(width: 6), // km 텍스트와 거리 사이의 간격
+              SizedBox(width: 6),
               Baseline(
-                baseline: 45, // 텍스트의 베이스라인 위치 조정
+                baseline: 45,
                 baselineType: TextBaseline.alphabetic,
                 child: Text(
                   'km',
@@ -146,7 +152,7 @@ class _StatsScreenState extends State<StatsScreen> {
               ),
             ],
           ),
-          SizedBox(height: 16), // 총 킬로미터와 총 시간 사이의 간격
+          SizedBox(height: 16),
           Text(
             '총 시간',
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
@@ -161,7 +167,7 @@ class _StatsScreenState extends State<StatsScreen> {
               fontStyle: FontStyle.italic,
             ),
           ),
-          SizedBox(height: 16), // 총 시간과 추가 정보 사이의 간격
+          SizedBox(height: 16),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -173,7 +179,7 @@ class _StatsScreenState extends State<StatsScreen> {
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                   Text(
-                    '05:30',
+                    _formatPace(_averagePace),
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                 ],
@@ -186,7 +192,7 @@ class _StatsScreenState extends State<StatsScreen> {
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                   Text(
-                    '05 km',
+                    '${_averageDistance.toStringAsFixed(2)} km',
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                 ],
@@ -199,14 +205,13 @@ class _StatsScreenState extends State<StatsScreen> {
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                   Text(
-                    '959 회',
+                    '$_totalRuns 회',
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                 ],
               ),
             ],
           ),
-
         ],
       ),
     );
