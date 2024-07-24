@@ -1,3 +1,5 @@
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+
 class RunningSession {
   final String id;
   final DateTime date;
@@ -5,7 +7,8 @@ class RunningSession {
   final int duration;
   final double averagePace;
   final int strength;
-  final String? imagePath; // 여기에 imagePath 속성을 추가합니다.
+  final String? imagePath;
+  final List<LatLng>? route;  // 새로 추가된 필드
 
   RunningSession({
     required this.id,
@@ -14,7 +17,8 @@ class RunningSession {
     required this.duration,
     required this.averagePace,
     required this.strength,
-    this.imagePath, // 생성자에 imagePath를 추가합니다.
+    this.imagePath,
+    this.route,  // 생성자에 route 추가
   });
 
   factory RunningSession.fromJson(Map<String, dynamic> json) {
@@ -25,6 +29,9 @@ class RunningSession {
       duration: (json['duration'] as num).toInt(),
       averagePace: (json['average_pace'] as num).toDouble(),
       strength: (json['strength'] as num).toInt(),
+      imagePath: json['image_path'] as String?,
+      route: (json['route'] as List<dynamic>?)?.map((e) =>
+          LatLng(e['latitude'] as double, e['longitude'] as double)).toList(),
     );
   }
 
@@ -36,6 +43,9 @@ class RunningSession {
       'duration': duration,
       'averagePace': averagePace,
       'strength': strength,
+      'imagePath': imagePath,
+      'route': route?.map((latLng) =>
+      {'latitude': latLng.latitude, 'longitude': latLng.longitude}).toList(),
     };
   }
 }

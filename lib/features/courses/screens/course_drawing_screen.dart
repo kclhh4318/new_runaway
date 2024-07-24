@@ -1,17 +1,14 @@
 import 'dart:async';
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:provider/provider.dart';
-import 'package:new_runaway/features/courses/course_provider.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:new_runaway/features/courses/course_provider.dart';
 import 'package:new_runaway/services/api_service.dart';
 import 'package:new_runaway/models/recommended_course.dart';
-import 'package:new_runaway/models/course.dart'; // Course 클래스를 import
+import 'package:new_runaway/models/course.dart';
 import 'package:new_runaway/features/courses/screens/course_analysis_result_screen.dart';
-import 'dart:typed_data';
-import 'dart:ui' as ui;
-import 'package:new_runaway/utils/image_cache.dart';
+import 'package:new_runaway/widgets/course_painter.dart';  // 추가된 import
 
 class CourseDrawingScreen extends StatefulWidget {
   const CourseDrawingScreen({Key? key}) : super(key: key);
@@ -29,7 +26,7 @@ class _CourseDrawingScreenState extends State<CourseDrawingScreen> {
   List<Offset> _sketchPoints = [];
   LatLngBounds? _lastBounds;
   final ApiService _apiService = ApiService();
-  List<RecommendedCourse> _recommendedCourses = []; // 수정된 부분
+  List<RecommendedCourse> _recommendedCourses = [];
 
   @override
   void initState() {
@@ -41,11 +38,13 @@ class _CourseDrawingScreenState extends State<CourseDrawingScreen> {
     if (_currentLocation == null) return;
     try {
       final courses = await _apiService.getLatestCourses(
-          _currentLocation!.latitude,
-          _currentLocation!.longitude
+        _currentLocation!.latitude,
+        _currentLocation!.longitude,
       );
       setState(() {
-        _recommendedCourses = courses.map((course) => convertCourseToRecommendedCourse(course)).toList();
+        _recommendedCourses = courses
+            .map((course) => convertCourseToRecommendedCourse(course))
+            .toList();
       });
       print('Loaded ${_recommendedCourses.length} recommended courses');
     } catch (e) {
@@ -99,7 +98,8 @@ class _CourseDrawingScreenState extends State<CourseDrawingScreen> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => CourseAnalysisResultScreen(course: course),
+                  builder: (context) =>
+                      CourseAnalysisResultScreen(course: course),
                 ),
               );
             },
@@ -113,7 +113,10 @@ class _CourseDrawingScreenState extends State<CourseDrawingScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('코스 그리기'), backgroundColor: Colors.white,),
+      appBar: AppBar(
+        title: const Text('코스 그리기'),
+        backgroundColor: Colors.white,
+      ),
       body: Stack(
         children: [
           GoogleMap(
@@ -150,7 +153,8 @@ class _CourseDrawingScreenState extends State<CourseDrawingScreen> {
                     ElevatedButton(
                       onPressed: _toggleDrawingMode,
                       style: ElevatedButton.styleFrom(
-                        foregroundColor: Color(0xFF0064FF), backgroundColor: Colors.white, // 폰트색
+                        foregroundColor: Color(0xFF0064FF),
+                        backgroundColor: Colors.white,
                       ),
                       child: Text(_isDrawingMode ? '드로잉 종료' : '드로잉 시작'),
                     ),
@@ -158,15 +162,17 @@ class _CourseDrawingScreenState extends State<CourseDrawingScreen> {
                       ElevatedButton(
                         onPressed: _clearDrawing,
                         style: ElevatedButton.styleFrom(
-                          foregroundColor: Color(0xFF0064FF), backgroundColor: Colors.white, // 폰트색
+                          foregroundColor: Color(0xFF0064FF),
+                          backgroundColor: Colors.white,
                         ),
-                        child: Text('다시 그리기')
+                        child: Text('다시 그리기'),
                       ),
                     SizedBox(width: 24),
                     ElevatedButton(
                       onPressed: _finishDrawing,
                       style: ElevatedButton.styleFrom(
-                        foregroundColor: Colors.white, backgroundColor: Color(0xFF0064FF), // 폰트색
+                        foregroundColor: Colors.white,
+                        backgroundColor: Color(0xFF0064FF),
                       ),
                       child: Text('완료'),
                     ),
@@ -184,24 +190,6 @@ class _CourseDrawingScreenState extends State<CourseDrawingScreen> {
         ],
       ),
     );
-  }
-
-  Future<Widget> base64ToImage(String base64String) async {
-    try {
-      final image = await Base64ImageCache.getImage(base64String, 200, 200);  // 클래스 이름을 변경했다모
-      print('Image size: ${image.width}x${image.height}');
-
-      return RawImage(
-        image: image,
-        fit: BoxFit.cover,
-      );
-    } catch (e) {
-      print('Error decoding base64 image: $e');
-      return Container(
-        color: Colors.grey[300],
-        child: Icon(Icons.error),
-      );
-    }
   }
 
   Widget _buildRecommendedCourses() {
@@ -227,6 +215,7 @@ class _CourseDrawingScreenState extends State<CourseDrawingScreen> {
         width: 100,
         margin: EdgeInsets.only(right: 10),
         decoration: BoxDecoration(
+          color: Colors.white,
           borderRadius: BorderRadius.circular(10),
           border: Border.all(color: Colors.grey),
         ),
@@ -236,32 +225,9 @@ class _CourseDrawingScreenState extends State<CourseDrawingScreen> {
             Expanded(
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(10),
-                child: course.route != null && course.route!.isNotEmpty
-                    ? FutureBuilder<Widget>(
-                  future: base64ToImage(course.route!),
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.done && snapshot.hasData) {
-                      return Container(
-                        color: Colors.white, // 배경색을 흰색으로 설정
-                        child: snapshot.data!,
-                      );
-                    } else if (snapshot.hasError) {
-                      print('Error loading image: ${snapshot.error}');
-                      return Container(
-                        color: Colors.red, // 에러 시 빨간색 배경
-                        child: Icon(Icons.error),
-                      );
-                    } else {
-                      return Container(
-                        color: Colors.yellow, // 로딩 중 노란색 배경
-                        child: CircularProgressIndicator(),
-                      );
-                    }
-                  },
-                )
-                    : Container(
-                  color: Colors.grey[300],
-                  child: Icon(Icons.image_not_supported),
+                child: CustomPaint(
+                  painter: CoursePainter(course.points),
+                  child: Container(),
                 ),
               ),
             ),
@@ -327,11 +293,15 @@ class _CourseDrawingScreenState extends State<CourseDrawingScreen> {
       double percentageX = point.dx / context.size!.width;
       double percentageY = point.dy / context.size!.height;
 
-      double lngDiff = _lastBounds!.northeast.longitude - _lastBounds!.southwest.longitude;
-      double latDiff = _lastBounds!.northeast.latitude - _lastBounds!.southwest.latitude;
+      double lngDiff =
+          _lastBounds!.northeast.longitude - _lastBounds!.southwest.longitude;
+      double latDiff =
+          _lastBounds!.northeast.latitude - _lastBounds!.southwest.latitude;
 
-      double longitude = _lastBounds!.southwest.longitude + (lngDiff * percentageX);
-      double latitude = _lastBounds!.northeast.latitude - (latDiff * percentageY);
+      double longitude =
+          _lastBounds!.southwest.longitude + (lngDiff * percentageX);
+      double latitude =
+          _lastBounds!.northeast.latitude - (latDiff * percentageY);
 
       _points.add(LatLng(latitude, longitude));
     }
@@ -351,9 +321,8 @@ class _CourseDrawingScreenState extends State<CourseDrawingScreen> {
   void _finishDrawing() async {
     _convertSketchToLatLng();
     if (_points.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('코스를 그려주세요모!'))
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('코스를 그려주세요모!')));
       return;
     }
 
@@ -388,7 +357,7 @@ class _CourseDrawingScreenState extends State<CourseDrawingScreen> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => CourseAnalysisResultScreen(course: recommendedCourse), // RecommendedCourse 객체 전달
+            builder: (context) => CourseAnalysisResultScreen(course: recommendedCourse),
           ),
         );
       }
@@ -397,8 +366,7 @@ class _CourseDrawingScreenState extends State<CourseDrawingScreen> {
       Navigator.of(context).pop();
 
       ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('코스 분석에 실패했다모: $e'))
-      );
+          SnackBar(content: Text('코스 분석에 실패했다모: $e')));
     }
   }
 }
@@ -422,40 +390,18 @@ class SketchPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(SketchPainter oldDelegate) => true;
-
 }
-
-
-/*
-// Course 객체를 RecommendedCourse 객체로 변환하는 메서드
-RecommendedCourse convertCourseToRecommendedCourse(Course course) {
-  List<LatLng> points = [];
-  if (course.routeCoordinate['type'] == 'LineString') {
-    List<dynamic> coordinates = course.routeCoordinate['coordinates'];
-    for (var coordinate in coordinates) {
-      if (coordinate is List && coordinate.length == 2) {
-        points.add(LatLng(coordinate[1].toDouble(), coordinate[0].toDouble()));
-      }
-    }
-  }
-
-  return RecommendedCourse(
-    points: points,
-    distance: course.distance,
-    description: '코스 ${course.id.toHexString()} - ${course.courseType ? "추천" : "사용자 생성"} 코스',
-    safetyTips: ['안전하게 달리세요!'],
-    pointsOfInterest: ['추천 수: ${course.recommendationCount}'],
-  );
-}
-*/
 
 RecommendedCourse convertCourseToRecommendedCourse(Course course) {
   return RecommendedCourse(
     points: course.routeCoordinate != null
-        ? (course.routeCoordinate!['coordinates'] as List).map((point) => LatLng(point[1], point[0])).toList()
+        ? (course.routeCoordinate!['coordinates'] as List)
+        .map((point) => LatLng(point[1], point[0]))
+        .toList()
         : [],
     distance: course.distance ?? 0.0,
-    description: '코스 ${course.id.toHexString()} - ${course.isRecommendedCourse ? "추천" : "사용자 생성"} 코스',
+    description:
+    '코스 ${course.id.toHexString()} - ${course.isRecommendedCourse ? "추천" : "사용자 생성"} 코스',
     safetyTips: ['안전하게 달리세요!'],
     pointsOfInterest: ['추천 수: ${course.recommendationCount ?? 0}'],
     route: course.route,

@@ -1,22 +1,16 @@
-import 'dart:convert';
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import 'package:new_runaway/config/app_config.dart';
 import 'package:new_runaway/services/api_service.dart';
-import 'package:new_runaway/services/token_service.dart';
 import 'package:new_runaway/services/storage_service.dart';
-import 'package:new_runaway/utils/logger.dart';
 import 'package:new_runaway/features/courses/screens/course_drawing_screen.dart';
 import 'package:new_runaway/features/running/screens/running_session_screen.dart';
 import 'package:new_runaway/features/stats/widgets/period_selector.dart';
 import 'package:new_runaway/features/stats/widgets/stats_bar_chart.dart';
 import 'package:new_runaway/features/running/running_provider.dart';
 import 'package:new_runaway/models/running_session.dart';
-import 'package:new_runaway/services/api_service.dart';
-import 'package:new_runaway/services/storage_service.dart';
-
+import 'package:new_runaway/widgets/course_painter.dart';
 import 'all_runs_screen.dart';
 
 class StatsScreen extends StatefulWidget {
@@ -386,114 +380,96 @@ class _StatsScreenState extends State<StatsScreen> {
           return _buildEmptyRecentRuns();
         } else {
           return Column(
-            children: snapshot.data!.take(3).map((run) => _buildRecentRunItem(
-              run.date.toString().substring(0, 10),
-              '${run.distance.toStringAsFixed(2)} km',
-              _formatDuration(run.duration),
-              _formatPace(run.averagePace),
-              run.strength,
-              run.imagePath, // 여기에서 imagePath 전달
-            )).toList(),
+            children: snapshot.data!.take(3).map((run) => _buildRecentRunItem(run)).toList(),
           );
         }
       },
     );
   }
 
-  Widget _buildRecentRunItem(String date, String distance, String time, String pace, int strength, String? imagePath) {
-    String badgeImage;
-    if (strength >= 1 && strength <= 3) {
-      badgeImage = 'assets/images/strength1-3.png';
-    } else if (strength >= 4 && strength <= 6) {
-      badgeImage = 'assets/images/strength4-6.png';
-    } else if (strength >= 7 && strength <= 9) {
-      badgeImage = 'assets/images/strength7-9.png';
-    } else if (strength == 10) {
-      badgeImage = 'assets/images/strength10.png';
-    } else {
-      badgeImage = ''; // 기본값을 설정하거나 필요에 따라 다르게 처리
-    }
-
+  Widget _buildRecentRunItem(RunningSession run) {
     return Container(
-        margin: EdgeInsets.only(bottom: 10),
-        padding: EdgeInsets.all(10),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(15),
-          boxShadow: const [
-            BoxShadow(
-              color: Colors.black26,
-              blurRadius: 10,
-              offset: Offset(0, 4),
-            ),
-          ],
+    margin: EdgeInsets.only(bottom: 10),
+    padding: EdgeInsets.all(10),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(15),
+      boxShadow: const [
+        BoxShadow(
+          color: Colors.black26,
+          blurRadius: 10,
+          offset: Offset(0, 4),
         ),
-        child: Stack(
-          children: [
-        Row(
+      ],
+    ),
+      child: Stack(
         children: [
-        // 컨테이너는 코스 이미지로 추후에 대체
-        Container(
-        width: 100,
-          height: 100,
-          child: imagePath != null
-              ? Image.file(File(imagePath), fit: BoxFit.cover)
-              : Container(color: Colors.grey[300]),
-        ),
-        SizedBox(width: 10),
-        Expanded(
-        child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-        Text(date, style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
-    SizedBox(height: 5),
-    Text('총 킬로미터', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-    Text(
-    distance,
-    style: const TextStyle(
-    fontWeight: FontWeight.bold,
-    fontSize: 19,
-    fontFamily: 'Giants',
-    height: 1.2, // 위아래 자간 설정
-    ),
-    ),
-    SizedBox(height: 5),
-    Row(
-    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-    children: [
-    Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-    Text('시간', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-    Text(time, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, height: 1.2))
-    ],
-    ),
-    Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Text('평균 페이스', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-      Text(pace, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, height: 1.2)),
-    ],
-    ),
-      SizedBox(width: 13), // 평균 페이스를 왼쪽으로 이동시키기 위해 간격 조정
-    ],
-    ),
-        ],
-        ),
-        ),
-        ],
-        ),
-            Positioned(
-              top: 0,
-              right: 0,
-              child: Image.asset(
-                badgeImage, // 뱃지 이미지 경로
-                width: 45,
-                height: 45,
+          Row(
+            children: [
+              Container(
+                width: 100,
+                height: 100,
+                child: run.route != null && run.route!.isNotEmpty
+                    ? CustomPaint(
+                  painter: CoursePainter(run.route!),
+                  size: Size(100, 100),
+                )
+                    : Container(color: Colors.grey[300]),
               ),
+              SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(run.date.toString().split(' ')[0], style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
+                    SizedBox(height: 5),
+                    Text('총 킬로미터', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                    Text(
+                      '${run.distance.toStringAsFixed(2)} km',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 19,
+                        fontFamily: 'Giants',
+                        height: 1.2,
+                      ),
+                    ),
+                    SizedBox(height: 5),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('시간', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                            Text(_formatDuration(run.duration), style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, height: 1.2,))
+                          ],
+                        ),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('평균 페이스', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                            Text(_formatPace(run.averagePace), style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, height: 1.2)),
+                          ],
+                        ),
+                        SizedBox(width: 13),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          Positioned(
+            top: 0,
+            right: 0,
+            child: Image.asset(
+              _getStrengthBadgeImage(run.strength),
+              width: 45,
+              height: 45,
             ),
-          ],
-        ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -629,6 +605,20 @@ class _StatsScreenState extends State<StatsScreen> {
         Center(child: CircularProgressIndicator()),
       ],
     );
+  }
+
+  String _getStrengthBadgeImage(int strength) {
+    if (strength >= 1 && strength <= 3) {
+      return 'assets/images/strength1-3.png';
+    } else if (strength >= 4 && strength <= 6) {
+      return 'assets/images/strength4-6.png';
+    } else if (strength >= 7 && strength <= 9) {
+      return 'assets/images/strength7-9.png';
+    } else if (strength == 10) {
+      return 'assets/images/strength10.png';
+    } else {
+      return 'assets/images/default_strength.png';
+    }
   }
 
   Widget _buildErrorRecentRuns(String error) {
