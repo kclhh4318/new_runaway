@@ -4,7 +4,7 @@ class RunningSession {
   final double distance;
   final int duration;
   final double averagePace;
-  final int strength; // 새로 추가된 속성
+  final int strength;
 
   RunningSession({
     required this.id,
@@ -12,17 +12,17 @@ class RunningSession {
     required this.distance,
     required this.duration,
     required this.averagePace,
-    required this.strength, // 새로 추가된 속성
+    required this.strength,
   });
 
   factory RunningSession.fromJson(Map<String, dynamic> json) {
     return RunningSession(
-      id: json['id'] ?? '',
-      date: json['date'] != null ? DateTime.parse(json['date']) : DateTime.now(),
-      distance: (json['distance'] ?? 0).toDouble(),
-      duration: json['duration'] ?? 0,
-      averagePace: (json['average_pace'] ?? 0).toDouble(),
-      strength: json['strength'] ?? 0,
+      id: json['_id'] as String,  // '_id'로 변경
+      date: DateTime.parse(json['date']),
+      distance: (json['distance'] as num).toDouble(),
+      duration: (json['duration'] as num).toInt(),
+      averagePace: (json['average_pace'] as num).toDouble(),  // 'average_pace'로 변경
+      strength: (json['strength'] as num).toInt(),
     );
   }
 

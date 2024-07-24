@@ -13,6 +13,8 @@ import 'package:new_runaway/features/stats/screens/stats_screen.dart';
 import 'package:new_runaway/utils/logger.dart';
 import 'package:new_runaway/services/api_service.dart';
 
+import 'features/stats/screens/all_runs_screen.dart';
+
 void main() async {
   setupLogger();
 
@@ -87,6 +89,7 @@ class MyApp extends StatelessWidget {
         ),
         routes: {
           '/course_analysis_result': (context) => CourseAnalysisResultScreen(),
+          '/all_runs': (context) => AllRunsScreen(),
         },
       ),
     );
