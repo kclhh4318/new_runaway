@@ -75,11 +75,6 @@ class CourseAnalysisResultScreen extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
                     ElevatedButton(
-                      onPressed: () => _showCountdownAndStartRunning(context, recommendedCourse.points),
-                      child: Text('GO!'),
-                      style: ElevatedButton.styleFrom(
-                        foregroundColor: Colors.white, backgroundColor: Color(0xFF0064FF),
-                      ),
                       onPressed: recommendedCourse != null
                           ? () => _showCountdownAndStartRunning(context, recommendedCourse.points)
                           : null,

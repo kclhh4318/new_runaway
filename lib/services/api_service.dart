@@ -277,7 +277,16 @@ class ApiService {
 
       if (response.statusCode == 200) {
         final List<dynamic> jsonList = json.decode(response.body);
-        return jsonList.map((json) => Course.fromJson(json)).toList();
+        logger.info('Parsed JSON list: $jsonList');
+        final courses = jsonList.map((json) {
+          logger.info('Processing course JSON:');
+          json.forEach((key, value) {
+            logger.info('  $key: ${value.runtimeType} = $value');
+          });
+          return Course.fromJson(json);
+        }).toList();
+        logger.info('Converted courses: $courses');
+        return courses;
       } else {
         throw Exception('최신 코스를 불러오는 데 실패했다모! 상태 코드: ${response.statusCode}, 응답: ${response.body}');
       }

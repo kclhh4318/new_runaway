@@ -6,6 +6,7 @@ class RecommendedCourse {
   final String description;
   final List<String> safetyTips;
   final List<String> pointsOfInterest;
+  final String? route;  // 추가된 필드, null 허용
 
   RecommendedCourse({
     required this.points,
@@ -13,6 +14,7 @@ class RecommendedCourse {
     required this.description,
     required this.safetyTips,
     required this.pointsOfInterest,
+    this.route,  // 생성자에 추가
   });
 
   factory RecommendedCourse.fromJson(Map<String, dynamic> json) {
@@ -24,6 +26,7 @@ class RecommendedCourse {
       description: json['description'] as String,
       safetyTips: (json['safetyTips'] as List).cast<String>(),
       pointsOfInterest: (json['pointsOfInterest'] as List?)?.cast<String>() ?? ['관심 지점 정보가 없습니다.'],
+      route: json['route'] as String?,  // 추가된 부분
     );
   }
 }

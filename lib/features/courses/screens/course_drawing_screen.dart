@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:provider/provider.dart';
@@ -43,10 +44,11 @@ class _CourseDrawingScreenState extends State<CourseDrawingScreen> {
       setState(() {
         _recommendedCourses = courses.map((course) => convertCourseToRecommendedCourse(course)).toList();
       });
+      print('Loaded ${_recommendedCourses.length} recommended courses');
     } catch (e) {
       print('추천 코스를 불러오는 데 실패했다모: $e');
       setState(() {
-        _recommendedCourses = []; // 빈 리스트로 설정
+        _recommendedCourses = [];
       });
     }
   }
@@ -183,19 +185,34 @@ class _CourseDrawingScreenState extends State<CourseDrawingScreen> {
                           width: 100,
                           margin: EdgeInsets.only(right: 10),
                           decoration: BoxDecoration(
-                            color: Colors.grey[300],
                             borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: Colors.grey),
                           ),
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
+                              Expanded(
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(10),
+                                  child: course.route != null
+                                      ? base64ToImage(course.route!)
+                                      : Container(
+                                    color: Colors.grey[300],
+                                    child: Icon(Icons.image_not_supported),
+                                  ),
+                                ),
+                              ),
+                              SizedBox(height: 4),
                               Text(
+
                                 '${course.distance.toStringAsFixed(2)} km',
+
                                 style: TextStyle(fontWeight: FontWeight.bold),
                               ),
                               SizedBox(height: 4),
                               Text(
-                                '추천 ${course.pointsOfInterest.length}', // 추천 수를 포인트 오브 인터레스트 수로 대체
+                                '추천 ${course.pointsOfInterest.length}',
+
                                 style: TextStyle(fontSize: 12),
                               ),
                             ],
@@ -214,6 +231,19 @@ class _CourseDrawingScreenState extends State<CourseDrawingScreen> {
             ),
         ],
       ),
+    );
+  }
+
+  Image base64ToImage(String base64String) {
+    return Image.memory(
+      base64Decode(base64String),
+      fit: BoxFit.cover,
+      errorBuilder: (context, error, stackTrace) {
+        return Container(
+          color: Colors.grey[300],
+          child: Icon(Icons.error),
+        );
+      },
     );
   }
 
@@ -358,15 +388,42 @@ class SketchPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(SketchPainter oldDelegate) => true;
+
 }
 
+
+/*
 // Course 객체를 RecommendedCourse 객체로 변환하는 메서드
 RecommendedCourse convertCourseToRecommendedCourse(Course course) {
+  List<LatLng> points = [];
+  if (course.routeCoordinate['type'] == 'LineString') {
+    List<dynamic> coordinates = course.routeCoordinate['coordinates'];
+    for (var coordinate in coordinates) {
+      if (coordinate is List && coordinate.length == 2) {
+        points.add(LatLng(coordinate[1].toDouble(), coordinate[0].toDouble()));
+      }
+    }
+  }
+
   return RecommendedCourse(
-    points: [], // 필요한 경우 실제 데이터를 채워야 합니다.
+    points: points,
     distance: course.distance,
-    description: '', // 필요한 경우 실제 데이터를 채워야 합니다.
-    safetyTips: [], // 필요한 경우 실제 데이터를 채워야 합니다.
-    pointsOfInterest: [], // 필요한 경우 실제 데이터를 채워야 합니다.
+    description: '코스 ${course.id.toHexString()} - ${course.courseType ? "추천" : "사용자 생성"} 코스',
+    safetyTips: ['안전하게 달리세요!'],
+    pointsOfInterest: ['추천 수: ${course.recommendationCount}'],
+  );
+}
+*/
+
+RecommendedCourse convertCourseToRecommendedCourse(Course course) {
+  return RecommendedCourse(
+    points: course.routeCoordinate != null
+        ? (course.routeCoordinate!['coordinates'] as List).map((point) => LatLng(point[1], point[0])).toList()
+        : [],
+    distance: course.distance ?? 0.0,
+    description: '코스 ${course.id.toHexString()} - ${course.isRecommendedCourse ? "추천" : "사용자 생성"} 코스',
+    safetyTips: ['안전하게 달리세요!'],
+    pointsOfInterest: ['추천 수: ${course.recommendationCount ?? 0}'],
+    route: course.route,
   );
 }
