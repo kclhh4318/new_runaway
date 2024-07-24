@@ -192,4 +192,13 @@ class ApiService {
     }
   }
 
+  Future<Map<String, dynamic>> createCourse(Map<String, dynamic> data) async {
+    final userId = await _storageService.getUserId();
+    final response = await post(
+      'courses/create_course?user_id=$userId',
+      data,
+    );
+    return json.decode(response.body);
+  }
+
 }

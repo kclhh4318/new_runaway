@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:new_runaway/features/courses/course_provider.dart';
@@ -5,6 +7,9 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:new_runaway/features/running/screens/running_session_screen.dart';
 import 'package:new_runaway/features/running/widgets/countdown_timer.dart';
 import 'package:new_runaway/features/running/running_provider.dart';
+import 'dart:convert';
+import 'dart:typed_data';
+import 'dart:ui' as ui;
 
 class CourseAnalysisResultScreen extends StatelessWidget {
 
@@ -33,6 +38,10 @@ class CourseAnalysisResultScreen extends StatelessWidget {
                 ),
               },
               onMapCreated: (GoogleMapController controller) {
+                final courseProvider = Provider.of<CourseProvider>(context, listen: false);
+                final completer = Completer<GoogleMapController>();
+                completer.complete(controller);
+                courseProvider.setMapController(completer);
                 _fitBounds(controller, recommendedCourse.points);
               },
             )
@@ -128,7 +137,23 @@ class CourseAnalysisResultScreen extends StatelessWidget {
     );
   }
 
-  void _showCountdownAndStartRunning(BuildContext context, List<LatLng> coursePoints) {
+  void _showCountdownAndStartRunning(BuildContext context, List<LatLng> coursePoints) async {
+    final courseProvider = Provider.of<CourseProvider>(context, listen: false);
+
+    // 지도 이미지를 캡처하여 Base64로 인코딩
+    final controller = await courseProvider.mapController?.future;
+    final Uint8List? imageBytes = await controller?.takeSnapshot();
+    final String base64Image = base64Encode(imageBytes!);
+
+    // 코스 생성 API 호출
+    try {
+      final courseData = await courseProvider.createCourse(coursePoints, base64Image);
+      print('Course created successfully: $courseData');
+    } catch (e) {
+      print('Failed to create course: $e');
+      // 에러 처리 (예: 사용자에게 알림)
+    }
+
     Navigator.of(context).push(
       MaterialPageRoute(
         fullscreenDialog: true,
