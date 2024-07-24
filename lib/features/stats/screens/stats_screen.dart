@@ -28,7 +28,7 @@ class StatsScreen extends StatefulWidget {
 class _StatsScreenState extends State<StatsScreen> {
   final ScrollController _scrollController = ScrollController();
   bool _showRunningButtons = true;
-  String _selectedPeriod = '년';
+  String _selectedPeriod = '전체';
   DateTime _selectedDate = DateTime.now();
 
   double _totalDistance = 0;
