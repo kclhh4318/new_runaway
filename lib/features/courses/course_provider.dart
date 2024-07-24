@@ -29,40 +29,30 @@ class CourseProvider extends ChangeNotifier {
 Given the following drawn course coordinates:
 $pointsJson
 
-Please analyze this course and recommend a safe, realistic running route that STRICTLY adheres to actual roads, sidewalks, and pedestrian paths. Your task is to create a route that:
+Your task is to create a realistic and safe running route based on these coordinates. However, DO NOT simply connect these points. Instead, use them as a general guide to create a route that follows actual roads and pedestrian paths. Your route should:
 
-1. Uses ONLY existing roads, sidewalks, pedestrian paths, and public spaces that are accessible and safe for runners. Do NOT include any coordinates that would require running through buildings, private property, or inaccessible areas.
+1. Follow the general shape and direction of the drawn course, but prioritize using real roads and paths.
+2. Ensure EVERY point in your recommended route is on an actual road, sidewalk, or pedestrian path. Do not include any points that would be inside buildings or inaccessible areas.
+3. Adjust the route significantly if necessary to follow real-world infrastructure. It's okay if the final route deviates from the original drawing, as long as it maintains a similar overall shape and distance.
+4. Prioritize pedestrian-friendly areas such as sidewalks, park paths, and quiet residential streets.
+5. Avoid highways, major roads without sidewalks, and any areas unsafe for pedestrians.
+6. Use crosswalks or pedestrian crossings when the route needs to cross streets.
+7. Include parks, trails, or scenic areas if they fit naturally into the route.
+8. Try to create a circular route if possible, but prioritize safety and realism over perfect circularity.
+9. Aim for a total distance similar to what the original drawn course would be (within 20% deviation).
+10. Minimize sharp turns and complex intersections for runner safety and convenience.
 
-2. Prioritizes runner safety and accessibility over exact replication of the original drawn course. It's okay if the final route deviates significantly from the original, as long as it's safe and runnable.
+For your response, please provide:
+1. A list of LatLng coordinates that represent your recommended route. These should be actual points on roads or paths.
+2. The total distance of your recommended route in kilometers (to two decimal places).
+3. A detailed description of the route, highlighting how it follows actual roads and paths, and noting any significant deviations from the original drawn course.
+4. At least five specific safety tips for runners on this route.
+5. Any points of interest or landmarks that would likely be along this route.
 
-3. Follows the general direction of the drawn course, but ALWAYS adjusts to the nearest accessible pedestrian path or sidewalk.
-
-4. Absolutely avoids highways, major roads without sidewalks, and any areas unsafe or unsuitable for pedestrians.
-
-5. Utilizes crosswalks and pedestrian crossings when crossing streets is necessary.
-
-6. Incorporates parks, trails, or scenic areas if they are nearby and accessible, prioritizing runner-friendly environments.
-
-7. Creates a route with a similar total distance to the original (within 20% deviation), but this is less important than ensuring the route is safe and realistic.
-
-8. Aims for a circular route if possible, but prioritize safety and realistic paths over making the route circular.
-
-9. Minimizes the number of turns and avoids complex intersections where possible to keep the route simple and safe.
-
-10. Considers potential running hazards (e.g., busy streets, poor lighting areas) and provides safer alternatives.
-
-When providing coordinates, ensure that EACH AND EVERY coordinate point corresponds to an actual road, sidewalk, or pedestrian path. Do not include any points that would require a runner to leave a publicly accessible path.
-
-Provide the recommended course as a list of LatLng coordinates, along with:
-- The total distance of the course in kilometers (accurate to two decimal places)
-- A brief description of the route, highlighting how it follows actual roads and paths
-- At least three specific safety tips or considerations for runners on this route
-- Any potential points of interest or landmarks along the way that are actually on the route
-
-Format your response as a JSON object for easy parsing, including the following keys:
+Format your response as a JSON object with the following keys:
 coordinates, distance, description, safetyTips, pointsOfInterest
 
-Ensure that the JSON is valid and does not include any additional formatting or markdown. Double-check that all JSON objects and arrays are properly closed.
+Ensure your JSON is valid and contains no additional formatting or markdown.
 ''';
 
       final recommendation = await _openAIService.getRecommendedCourse(prompt);
