@@ -1,17 +1,23 @@
 import 'dart:async';
-
+import 'dart:typed_data';
+import 'dart:ui' as ui;
+import 'dart:convert';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/material.dart';
+import 'package:logging/logging.dart';
 import 'package:provider/provider.dart';
 import 'package:new_runaway/features/courses/course_provider.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:new_runaway/features/running/screens/running_session_screen.dart';
 import 'package:new_runaway/features/running/widgets/countdown_timer.dart';
 import 'package:new_runaway/features/running/running_provider.dart';
-import 'dart:convert';
-import 'dart:typed_data';
-import 'dart:ui' as ui;
+import 'package:flutter/rendering.dart';
+
+import '../../../utils/logger.dart';
 
 class CourseAnalysisResultScreen extends StatelessWidget {
+  final logger = Logger('CourseAnalysisResultScreen');
+  final GlobalKey _globalKey = GlobalKey();
 
   @override
   Widget build(BuildContext context) {
@@ -24,26 +30,25 @@ class CourseAnalysisResultScreen extends StatelessWidget {
         children: [
           Expanded(
             child: recommendedCourse != null
-                ? GoogleMap(
-              initialCameraPosition: CameraPosition(
-                target: _calculateCenter(recommendedCourse.points),
-                zoom: 14.0,
-              ),
-              polylines: {
-                Polyline(
-                  polylineId: PolylineId('recommended_course'),
-                  points: recommendedCourse.points,
-                  color: Colors.blue,
-                  width: 5,
+                ? RepaintBoundary(
+              key: _globalKey,
+              child: GoogleMap(
+                initialCameraPosition: CameraPosition(
+                  target: _calculateCenter(recommendedCourse.points),
+                  zoom: 14.0,
                 ),
-              },
-              onMapCreated: (GoogleMapController controller) {
-                final courseProvider = Provider.of<CourseProvider>(context, listen: false);
-                final completer = Completer<GoogleMapController>();
-                completer.complete(controller);
-                courseProvider.setMapController(completer);
-                _fitBounds(controller, recommendedCourse.points);
-              },
+                polylines: {
+                  Polyline(
+                    polylineId: PolylineId('recommended_course'),
+                    points: recommendedCourse.points,
+                    color: Colors.blue,
+                    width: 5,
+                  ),
+                },
+                onMapCreated: (GoogleMapController controller) {
+                  _fitBounds(controller, recommendedCourse.points);
+                },
+              ),
             )
                 : Center(child: CircularProgressIndicator()),
           ),
@@ -55,10 +60,10 @@ class CourseAnalysisResultScreen extends StatelessWidget {
                 Text('총 거리: ${courseProvider.totalDistance.toStringAsFixed(2)} km',
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                 SizedBox(height: 8),
-                Text('코스 설명: ${recommendedCourse?.description ?? ""}',
+                Text('코스 설명: ${recommendedCourse?.description.split('.').first ?? ""}',
                     style: TextStyle(fontSize: 16)),
                 SizedBox(height: 8),
-                Text('안전 팁: ${recommendedCourse?.safetyTips ?? ""}',
+                Text('안전 팁: ${recommendedCourse?.safetyTips.isNotEmpty == true ? recommendedCourse!.safetyTips.first : ""}',
                     style: TextStyle(fontSize: 16)),
                 SizedBox(height: 16),
                 Row(
@@ -66,18 +71,7 @@ class CourseAnalysisResultScreen extends StatelessWidget {
                   children: [
                     ElevatedButton(
                       onPressed: recommendedCourse != null
-                          ? () {
-                        final runningProvider = Provider.of<RunningProvider>(context, listen: false);
-                        runningProvider.startRunning(predefinedCourse: recommendedCourse.points);
-                        Navigator.of(context).pushReplacement(
-                          MaterialPageRoute(
-                            builder: (context) => RunningSessionScreen(
-                              showCountdown: true,
-                              predefinedCourse: recommendedCourse.points,
-                            ),
-                          ),
-                        );
-                      }
+                          ? () => _showCountdownAndStartRunning(context, recommendedCourse.points)
                           : null,
                       child: Text('GO!'),
                     ),
@@ -137,41 +131,60 @@ class CourseAnalysisResultScreen extends StatelessWidget {
     );
   }
 
-  void _showCountdownAndStartRunning(BuildContext context, List<LatLng> coursePoints) async {
+  // course_analysis_result_screen.dart
+  // course_analysis_result_screen.dart
+  Future<void> _showCountdownAndStartRunning(BuildContext context, List<LatLng> coursePoints) async {
     final courseProvider = Provider.of<CourseProvider>(context, listen: false);
+    final runningProvider = Provider.of<RunningProvider>(context, listen: false);
 
-    // 지도 이미지를 캡처하여 Base64로 인코딩
-    final controller = await courseProvider.mapController?.future;
-    final Uint8List? imageBytes = await controller?.takeSnapshot();
-    final String base64Image = base64Encode(imageBytes!);
+    // 이미지 데이터를 base64로 인코딩
+    final Uint8List pngBytes = await _capturePng();
+    final String base64Image = base64Encode(pngBytes);
 
-    // 코스 생성 API 호출
     try {
-      final courseData = await courseProvider.createCourse(coursePoints, base64Image);
-      print('Course created successfully: $courseData');
-    } catch (e) {
-      print('Failed to create course: $e');
-      // 에러 처리 (예: 사용자에게 알림)
-    }
+      logger.info('Attempting to create course');
+      // 코스 생성 API 호출 (course_type을 0으로 설정, 필요에 따라 변경 가능)
+      final courseId = await courseProvider.createCourse(coursePoints, base64Image, 0);
+      logger.info('Course created successfully. Course ID: $courseId');
 
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        fullscreenDialog: true,
-        builder: (context) => Scaffold(
-          body: CountdownTimer(
-            onFinished: () {
-              Navigator.of(context).pushReplacement(
-                MaterialPageRoute(
-                  builder: (context) => RunningSessionScreen(
-                    showCountdown: false,
-                    predefinedCourse: coursePoints,
-                  ),
-                ),
-              );
-            },
+      if (courseId != null && courseId.isNotEmpty) {
+        runningProvider.setCourseId(courseId);
+        logger.info('Course ID set in RunningProvider: $courseId');
+      } else {
+        logger.warning('Course ID is null or empty after course creation');
+      }
+
+      // 러닝 세션 시작
+      runningProvider.startRunning(predefinedCourse: coursePoints);
+
+      // 러닝 세션 화면으로 이동
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (context) => RunningSessionScreen(
+            showCountdown: true,
+            predefinedCourse: coursePoints,
           ),
         ),
-      ),
-    );
+      );
+    } catch (e) {
+      logger.severe('Failed to create course: $e');
+      // 에러 처리
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('코스 생성에 실패했습니다: $e')),
+      );
+    }
   }
+
+  Future<Uint8List> _capturePng() async {
+    try {
+      RenderRepaintBoundary boundary = _globalKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
+      ui.Image image = await boundary.toImage(pixelRatio: 3.0);
+      ByteData? byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+      return byteData!.buffer.asUint8List();
+    } catch (e) {
+      logger.severe('Error capturing PNG: $e');
+      return Uint8List(0);
+    }
+  }
+
 }

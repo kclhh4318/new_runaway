@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:logging/logging.dart';
 import 'package:provider/provider.dart';
 import 'package:new_runaway/features/running/running_provider.dart';
 import 'package:new_runaway/features/running/widgets/run_map.dart';
 import 'package:new_runaway/features/running/screens/run_result_screen.dart';
 import 'package:new_runaway/features/running/widgets/countdown_timer.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'dart:async';
+import 'package:logging/logging.dart';
 
 class RunningSessionScreen extends StatefulWidget {
   final bool showCountdown;
@@ -24,10 +27,13 @@ class RunningSessionScreen extends StatefulWidget {
 class _RunningSessionScreenState extends State<RunningSessionScreen> {
   bool _showMap = false;
   late bool _showCountdown;
+  final logger = Logger('RunningSessionScreen');
+  Timer? _logTimer;
 
   @override
   void initState() {
     super.initState();
+    _startPeriodicLogging();
     _showCountdown = widget.showCountdown;
     if (!_showCountdown) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -38,10 +44,20 @@ class _RunningSessionScreenState extends State<RunningSessionScreen> {
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: []);
   }
 
+  void _startPeriodicLogging() {
+    _logTimer = Timer.periodic(Duration(minutes: 1), (timer) {
+      if (mounted) {
+        final runningProvider = Provider.of<RunningProvider>(context, listen: false);
+        logger.info('Periodic log - Course ID: ${runningProvider.courseId}');
+      }
+    });
+  }
+
+
   @override
   void dispose() {
     // 상단바 복원
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: SystemUiOverlay.values);
+    _logTimer?.cancel();
     super.dispose();
   }
 
@@ -198,6 +214,7 @@ class _RunningSessionScreenState extends State<RunningSessionScreen> {
             avgPace: sessionData['avgPace'],
             currentPace: sessionData['currentPace'],
             route: sessionData['route'],
+            courseId: sessionData['courseId'],  // courseId 추가
           ),
         ),
       );
@@ -211,3 +228,4 @@ class _RunningSessionScreenState extends State<RunningSessionScreen> {
     }
   }
 }
+

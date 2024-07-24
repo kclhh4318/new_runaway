@@ -81,9 +81,10 @@ class ApiService {
     return json.decode(response.body);
   }
 
-  Future<void> endRunningSession(String sessionId, Map<String, dynamic> sessionData) async {
+  Future<void> endRunningSession(String sessionId, Map<String, dynamic> sessionData, String? courseId) async {
     logger.info('Ending running session');
     logger.info('Session ID: $sessionId');
+    logger.info('Course ID being sent to server: $courseId');
     logger.info('Session data: $sessionData');
     final response = await post('running_sessions/$sessionId/end', sessionData);
     logger.info('Running session end response: ${response.body}');
@@ -192,13 +193,22 @@ class ApiService {
     }
   }
 
+  // api_service.dart
   Future<Map<String, dynamic>> createCourse(Map<String, dynamic> data) async {
     final userId = await _storageService.getUserId();
+    if (userId == null) {
+      throw Exception('User ID is not available');
+    }
+    logger.info('Creating course for user ID: $userId');
+    logger.info('Course data: $data');
+
     final response = await post(
-      'courses/create_course?user_id=$userId',
+      'courses/create_course/$userId',
       data,
     );
-    return json.decode(response.body);
+    final responseData = json.decode(response.body);
+    logger.info('Create course response: $responseData');
+    return responseData;
   }
 
   Future<Map<String, dynamic>> getStats(String period, String userId) async {

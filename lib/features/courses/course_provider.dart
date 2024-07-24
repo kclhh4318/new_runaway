@@ -8,6 +8,8 @@ import 'package:new_runaway/models/recommended_course.dart';
 import 'package:new_runaway/services/openai_service.dart';
 import 'package:new_runaway/services/api_service.dart';
 
+import '../../utils/logger.dart';
+
 class CourseProvider extends ChangeNotifier {
   Completer<GoogleMapController>? mapController;
   final ApiService _apiService = ApiService();
@@ -56,11 +58,13 @@ Ensure your JSON is valid and contains no additional formatting or markdown.
 ''';
 
       final recommendation = await _openAIService.getRecommendedCourse(prompt);
+      print('OpenAI recommendation: $recommendation'); // 디버깅을 위한 로그
       _recommendedCourse = _parseRecommendation(recommendation);
       _totalDistance = _recommendedCourse!.distance;
       notifyListeners();
-    } catch (e) {
+    } catch (e, stackTrace) {
       print('Error analyzing and recommending course: $e');
+      print('Stack trace: $stackTrace');
       if (e is Exception) {
         print('Exception details: ${e.toString()}');
       }
@@ -73,21 +77,7 @@ Ensure your JSON is valid and contains no additional formatting or markdown.
 
   RecommendedCourse _parseRecommendation(String recommendation) {
     final Map<String, dynamic> data = json.decode(recommendation);
-
-    final List<LatLng> points = (data['coordinates'] as List).map((point) {
-      return LatLng(point['latitude'], point['longitude']);
-    }).toList();
-
-    final double distance = data['distance'];
-    final String description = data['description'] ?? '';
-    final String safetyTips = data['safetyTips'] ?? '';
-
-    return RecommendedCourse(
-      points: points,
-      distance: distance,
-      description: description,
-      safetyTips: safetyTips,
-    );
+    return RecommendedCourse.fromJson(data);
   }
 
   RecommendedCourse _createDefaultCourse(List<LatLng> drawnPoints) {
@@ -95,27 +85,44 @@ Ensure your JSON is valid and contains no additional formatting or markdown.
       points: drawnPoints,
       distance: _calculateDistance(drawnPoints),
       description: '사용자가 그린 원본 코스입니다. 실제 달릴 수 있는 경로로 조정이 필요할 수 있습니다.',
-      safetyTips: '주변 환경에 주의하며 안전하게 달리세요. 차도나 위험한 지역을 피해 달리세요.',
+      safetyTips: ['주변 환경에 주의하며 안전하게 달리세요.', '차도나 위험한 지역을 피해 달리세요.'],
+      pointsOfInterest: ['기본 코스에는 특별한 관심 지점이 없습니다.'],
     );
   }
 
-  Future<Map<String, dynamic>> createCourse(List<LatLng> routePoints, String imageData) async {
+  // course_provider.dart
+  Future<String?> createCourse(List<LatLng> routePoints, String imageData, int courseType) async {
+    logger.info('Creating course in CourseProvider');
+    logger.info('Course type: $courseType');
+
     final routeCoordinate = {
       "type": "LineString",
-      "coordinates": routePoints.map((point) => [point.latitude, point.longitude]).toList(),
+      "coordinates": routePoints.map((point) => [point.longitude, point.latitude]).toList(),
     };
 
     final data = {
       "route": imageData,
       "route_coordinate": routeCoordinate,
       "distance": _totalDistance,
+      "course_type": courseType,
     };
 
     try {
+      logger.info('Calling API service to create course');
       final response = await _apiService.createCourse(data);
-      return response;
+      logger.info('Course creation successful');
+      logger.info('Response: $response');
+
+      if (response.containsKey('id')) {
+        final courseId = response['id'] as String;
+        logger.info('Course ID received: $courseId');
+        return courseId;
+      } else {
+        logger.warning('No course ID found in the response');
+        return null;
+      }
     } catch (e) {
-      print('Error creating course: $e');
+      logger.severe('Error creating course: $e');
       rethrow;
     }
   }
