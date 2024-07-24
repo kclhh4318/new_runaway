@@ -37,6 +37,7 @@ class _StatsScreenState extends State<StatsScreen> {
   double _averagePace = 0;
   int _totalRuns = 0;
   double _averageDistance = 0;
+  String _userId = '';
 
   final ApiService _apiService = ApiService();
   final StorageService _storageService = StorageService();
@@ -46,6 +47,7 @@ class _StatsScreenState extends State<StatsScreen> {
     super.initState();
     _scrollController.addListener(_scrollListener);
     _fetchStats();
+    _fetchUserId();
   }
 
   void _scrollListener() {
@@ -93,14 +95,21 @@ class _StatsScreenState extends State<StatsScreen> {
         print('State updated:');
         print('_totalDistance: $_totalDistance');
         print('_totalDuration: $_totalDuration');
-        print('_averagePace: $_averagePace');
-        print('_totalRuns: $_totalRuns');
-        print('_averageDistance: $_averageDistance');
+        print('_averagePace: _averagePace');
+        print('_totalRuns: _totalRuns');
+        print('_averageDistance: _averageDistance');
       });
     } catch (e) {
       // 에러 핸들링
       print('통계 정보를 가져오지 못했습니다: $e');
     }
+  }
+
+  Future<void> _fetchUserId() async {
+    final userId = await _storageService.getUserId();
+    setState(() {
+      _userId = userId ?? '';
+    });
   }
 
   @override
@@ -130,7 +139,13 @@ class _StatsScreenState extends State<StatsScreen> {
                     ),
                     if (_selectedPeriod != '전체' && _selectedPeriod != '주')
                       SliverToBoxAdapter(child: _buildDateFilter()),
-                    SliverToBoxAdapter(child: _buildStatsChart()),
+                    SliverToBoxAdapter(
+                      child: StatsBarChart(
+                        selectedPeriod: _selectedPeriod,
+                        selectedDate: _selectedDate,
+                        userId: _userId,
+                      ),
+                    ),
                     SliverToBoxAdapter(child: _buildCourseStatistics()),
                     SliverToBoxAdapter(child: _buildRecentRuns(context, apiService)),
                     SliverToBoxAdapter(child: _buildMyDrawnCourses()),
@@ -284,24 +299,11 @@ class _StatsScreenState extends State<StatsScreen> {
       child: StatsBarChart(
         selectedPeriod: _selectedPeriod,
         selectedDate: _selectedDate,
+        userId: _userId,
       ),
     );
   }
-  Future<Map<String, int>> _fetchCourseStatistics(String userId) async {
-    final drawCourseCountResponse = await http.get(Uri.parse('${AppConfig.apiBaseUrl}/courses/count/$userId/0'));
-    final recommendedCourseCountResponse = await http.get(Uri.parse('${AppConfig.apiBaseUrl}/courses/count/$userId/1'));
 
-    if (drawCourseCountResponse.statusCode == 200 && recommendedCourseCountResponse.statusCode == 200) {
-      final drawCourseCount = int.parse(drawCourseCountResponse.body);
-      final recommendedCourseCount = int.parse(recommendedCourseCountResponse.body);
-      return {
-        'drawCourseCount': drawCourseCount,
-        'recommendedCourseCount': recommendedCourseCount,
-      };
-    } else {
-      throw Exception('Failed to load course statistics');
-    }
-  }
   Widget _buildCourseStatistics() {
     return FutureBuilder<String?>(
       future: StorageService().getUserId(),
@@ -670,4 +672,19 @@ class _StatsScreenState extends State<StatsScreen> {
     );
   }
 
+  Future<Map<String, int>> _fetchCourseStatistics(String userId) async {
+    final drawCourseCountResponse = await http.get(Uri.parse('${AppConfig.apiBaseUrl}/courses/count/$userId/0'));
+    final recommendedCourseCountResponse = await http.get(Uri.parse('${AppConfig.apiBaseUrl}/courses/count/$userId/1'));
+
+    if (drawCourseCountResponse.statusCode == 200 && recommendedCourseCountResponse.statusCode == 200) {
+      final drawCourseCount = int.parse(drawCourseCountResponse.body);
+      final recommendedCourseCount = int.parse(recommendedCourseCountResponse.body);
+      return {
+        'drawCourseCount': drawCourseCount,
+        'recommendedCourseCount': recommendedCourseCount,
+      };
+    } else {
+      throw Exception('Failed to load course statistics');
+    }
+  }
 }
