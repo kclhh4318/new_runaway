@@ -11,7 +11,6 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:new_runaway/features/running/screens/running_session_screen.dart';
 import 'package:new_runaway/features/running/widgets/countdown_timer.dart';
 import 'package:new_runaway/features/running/running_provider.dart';
-import 'package:flutter/rendering.dart';
 
 import '../../../utils/logger.dart';
 
@@ -25,7 +24,7 @@ class CourseAnalysisResultScreen extends StatelessWidget {
     final recommendedCourse = courseProvider.recommendedCourse;
 
     return Scaffold(
-      appBar: AppBar(title: Text('코스 분석 결과')),
+      appBar: AppBar(title: Text('코스 분석 결과'), backgroundColor: Colors.white,),
       body: Column(
         children: [
           Expanded(
@@ -52,7 +51,8 @@ class CourseAnalysisResultScreen extends StatelessWidget {
             )
                 : Center(child: CircularProgressIndicator()),
           ),
-          Padding(
+          Container(
+            color: Colors.white, // 배경색 설정
             padding: const EdgeInsets.all(16.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -70,12 +70,18 @@ class CourseAnalysisResultScreen extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
                     ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        foregroundColor: Colors.white, backgroundColor: Color(0xFF0064FF),
+                      ),
                       onPressed: recommendedCourse != null
                           ? () => _showCountdownAndStartRunning(context, recommendedCourse.points)
                           : null,
-                      child: Text('GO!'),
+                      child: Text('RUN!'),
                     ),
                     ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        foregroundColor: Colors.white, backgroundColor: Color(0xFF0064FF),
+                      ),
                       onPressed: () async {
                         await courseProvider.reanalyze();
                         ScaffoldMessenger.of(context).showSnackBar(
@@ -99,8 +105,8 @@ class CourseAnalysisResultScreen extends StatelessWidget {
 
     double sumLat = 0, sumLng = 0;
     for (var point in points) {
-    sumLat += point.latitude;
-    sumLng += point.longitude;
+      sumLat += point.latitude;
+      sumLng += point.longitude;
     }
     return LatLng(sumLat / points.length, sumLng / points.length);
   }
@@ -131,7 +137,6 @@ class CourseAnalysisResultScreen extends StatelessWidget {
     );
   }
 
-  // course_analysis_result_screen.dart
   // course_analysis_result_screen.dart
   Future<void> _showCountdownAndStartRunning(BuildContext context, List<LatLng> coursePoints) async {
     final courseProvider = Provider.of<CourseProvider>(context, listen: false);
@@ -186,5 +191,4 @@ class CourseAnalysisResultScreen extends StatelessWidget {
       return Uint8List(0);
     }
   }
-
 }
