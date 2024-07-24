@@ -16,6 +16,7 @@ class RunningProvider with ChangeNotifier {
   List<LatLng> _routePoints = [];
   List<LatLng>? _predefinedCourse;
   String? _sessionId;
+  String? _courseId;
 
   Timer? _timer;
   StreamSubscription<Position>? _positionStream;
@@ -28,6 +29,7 @@ class RunningProvider with ChangeNotifier {
   List<LatLng> get routePoints => _routePoints;
   String? get sessionId => _sessionId;
   List<LatLng>? get predefinedCourse => _predefinedCourse;
+  String? get courseId => _courseId;
 
   void resetSession() {
     logger.info('Resetting session');
@@ -52,6 +54,7 @@ class RunningProvider with ChangeNotifier {
       final response = await _apiService.startRunningSession();
       _sessionId = response['session_id'];
       logger.info('Started running session with ID: $_sessionId');
+      logger.info('Starting running session. Course ID: $_courseId');
 
       _predefinedCourse = predefinedCourse;
       _isRunning = true;
@@ -68,6 +71,12 @@ class RunningProvider with ChangeNotifier {
     _isRunning = false;
     _timer?.cancel();
     _positionStream?.pause();
+    notifyListeners();
+  }
+
+  void setCourseId(String id) {
+    _courseId = id;
+    logger.info('Course ID set in RunningProvider: $_courseId');
     notifyListeners();
   }
 
@@ -90,9 +99,11 @@ class RunningProvider with ChangeNotifier {
       "avgPace": _avgPace,
       "currentPace": _currentPace,
       "route": _routePoints,
+      "courseId": _courseId,  // courseId 추가
     };
 
     logger.info('Stopping running session. Data prepared for result screen: $sessionData');
+    logger.info('Course ID at session end: $_courseId');
 
     return sessionData;
   }

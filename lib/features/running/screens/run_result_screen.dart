@@ -13,6 +13,7 @@ class RunResultScreen extends StatefulWidget {
   final double avgPace;
   final double currentPace;
   final List<LatLng> route;
+  final String courseId;
 
   const RunResultScreen({
     Key? key,
@@ -22,6 +23,7 @@ class RunResultScreen extends StatefulWidget {
     required this.avgPace,
     required this.currentPace,
     required this.route,
+    required this.courseId
   }) : super(key: key);
 
   @override
@@ -212,18 +214,24 @@ class _RunResultScreenState extends State<RunResultScreen> {
         "longitude": point.longitude
       }).toList(),
       "strength": _runningIntensity,
+      "course_id": widget.courseId,  // courseId 추가
+
     };
 
-    logger.info('Ending running session. Session data: $sessionData');
+    logger.info('Ending running session');
+    logger.info('Session ID: ${widget.sessionId}');
+    logger.info('Session data: $sessionData');
 
     try {
-      await _apiService.endRunningSession(widget.sessionId, sessionData);
+      final runningProvider = Provider.of<RunningProvider>(context, listen: false);
+      logger.info('Ending running session. Session ID: ${widget.sessionId}, Course ID: ${runningProvider.courseId}');
+      await _apiService.endRunningSession(widget.sessionId, sessionData, runningProvider.courseId);
       logger.info('Successfully ended running session');
-      context.read<RunningProvider>().resetSession();
+      logger.info('Final Course ID sent to server: ${runningProvider.courseId}');
+      runningProvider.resetSession();
     } catch (e) {
       logger.severe('Error ending running session: $e');
       // 여기에 에러 처리 로직을 추가할 수 있습니다.
     }
   }
-
 }
