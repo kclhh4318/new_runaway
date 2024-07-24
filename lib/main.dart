@@ -12,8 +12,9 @@ import 'package:new_runaway/services/session_service.dart';
 import 'package:new_runaway/features/stats/screens/stats_screen.dart';
 import 'package:new_runaway/utils/logger.dart';
 import 'package:new_runaway/services/api_service.dart';
-
+import 'package:new_runaway/models/course.dart';
 import 'features/stats/screens/all_runs_screen.dart';
+import 'package:mongo_dart/mongo_dart.dart';
 
 void main() async {
   setupLogger();
@@ -88,7 +89,9 @@ class MyApp extends StatelessWidget {
           },
         ),
         routes: {
-          '/course_analysis_result': (context) => CourseAnalysisResultScreen(),
+          '/course_analysis_result': (context) => CourseAnalysisResultScreen(
+            course: ModalRoute.of(context)!.settings.arguments as Course, // 수정된 부분
+          ),
           '/all_runs': (context) => AllRunsScreen(),
         },
       ),

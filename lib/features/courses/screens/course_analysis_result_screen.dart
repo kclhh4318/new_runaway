@@ -9,14 +9,16 @@ import 'package:provider/provider.dart';
 import 'package:new_runaway/features/courses/course_provider.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:new_runaway/features/running/screens/running_session_screen.dart';
-import 'package:new_runaway/features/running/widgets/countdown_timer.dart';
 import 'package:new_runaway/features/running/running_provider.dart';
 
 import '../../../utils/logger.dart';
-
+import '../../../models/course.dart'; // 추가된 부분
 class CourseAnalysisResultScreen extends StatelessWidget {
   final logger = Logger('CourseAnalysisResultScreen');
   final GlobalKey _globalKey = GlobalKey();
+  final Course course; // 추가된 부분
+
+  CourseAnalysisResultScreen({required this.course}); // 추가된 부분
 
   @override
   Widget build(BuildContext context) {
@@ -137,7 +139,6 @@ class CourseAnalysisResultScreen extends StatelessWidget {
     );
   }
 
-  // course_analysis_result_screen.dart
   Future<void> _showCountdownAndStartRunning(BuildContext context, List<LatLng> coursePoints) async {
     final courseProvider = Provider.of<CourseProvider>(context, listen: false);
     final runningProvider = Provider.of<RunningProvider>(context, listen: false);

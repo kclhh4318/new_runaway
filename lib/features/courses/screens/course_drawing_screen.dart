@@ -1,8 +1,12 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:new_runaway/features/courses/course_provider.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:new_runaway/services/api_service.dart';
+import 'package:new_runaway/models/course.dart';
+import 'package:new_runaway/features/courses/screens/course_analysis_result_screen.dart';
 
 class CourseDrawingScreen extends StatefulWidget {
   const CourseDrawingScreen({Key? key}) : super(key: key);
@@ -12,20 +16,38 @@ class CourseDrawingScreen extends StatefulWidget {
 }
 
 class _CourseDrawingScreenState extends State<CourseDrawingScreen> {
-  GoogleMapController? _mapController;
+  final Completer<GoogleMapController> _mapController = Completer();
   Set<Polyline> _polylines = {};
   List<LatLng> _points = [];
   bool _isDrawingMode = false;
-  List<Widget> _nearbyCourseThumbnails = [];
   LatLng? _currentLocation;
-  List<Offset> _sketchPoints = []; // 타입 변경
-  LatLngBounds? _lastBounds; // 새로운 변수 추가
+  List<Offset> _sketchPoints = [];
+  LatLngBounds? _lastBounds;
+  final ApiService _apiService = ApiService();
+  List<Course> _recommendedCourses = [];
 
   @override
   void initState() {
     super.initState();
-    _getCurrentLocation();
-    _loadNearbyCourseThumbnails();
+    _getCurrentLocation().then((_) => _loadRecommendedCourses());
+  }
+
+  Future<void> _loadRecommendedCourses() async {
+    if (_currentLocation == null) return;
+    try {
+      final courses = await _apiService.getLatestCourses(
+          _currentLocation!.latitude,
+          _currentLocation!.longitude
+      );
+      setState(() {
+        _recommendedCourses = courses;
+      });
+    } catch (e) {
+      print('추천 코스를 불러오는 데 실패했다모: $e');
+      setState(() {
+        _recommendedCourses = []; // 빈 리스트로 설정
+      });
+    }
   }
 
   Future<void> _getCurrentLocation() async {
@@ -42,26 +64,44 @@ class _CourseDrawingScreenState extends State<CourseDrawingScreen> {
       setState(() {
         _currentLocation = LatLng(position.latitude, position.longitude);
       });
+      _moveToCurrentLocation();
     } catch (e) {
-      print("Error getting current location: $e");
+      print("현재 위치를 가져오는 데 실패했다모: $e");
     }
   }
 
-  void _loadNearbyCourseThumbnails() {
-    // 임시 더미 데이터
-    setState(() {
-      _nearbyCourseThumbnails = List.generate(
-        5,
-            (index) => AspectRatio(
-          aspectRatio: 1,
-          child: Container(
-            margin: EdgeInsets.only(right: 8),
-            color: Colors.grey[300],
-            child: Center(child: Text('코스 ${index + 1}')),
+  Future<void> _moveToCurrentLocation() async {
+    if (_currentLocation == null) return;
+    final GoogleMapController controller = await _mapController.future;
+    controller.animateCamera(CameraUpdate.newLatLng(_currentLocation!));
+  }
+
+  void _showCourseConfirmationDialog(Course course) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('이 코스로 달려보시겠습니까?'),
+        content: Text('거리: ${course.distance.toStringAsFixed(2)} km'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('아니오'),
           ),
-        ),
-      );
-    });
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => CourseAnalysisResultScreen(course: course), // 수정된 부분
+                ),
+              );
+            },
+            child: Text('예'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -76,7 +116,8 @@ class _CourseDrawingScreenState extends State<CourseDrawingScreen> {
               zoom: 14.0,
             ),
             onMapCreated: (GoogleMapController controller) {
-              _mapController = controller;
+              _mapController.complete(controller);
+              _moveToCurrentLocation();
             },
             polylines: _polylines,
             myLocationEnabled: true,
@@ -128,21 +169,55 @@ class _CourseDrawingScreenState extends State<CourseDrawingScreen> {
                 SizedBox(height: 16),
                 Container(
                   height: 100,
-                  child: ListView(
+                  child: _recommendedCourses.isEmpty
+                      ? Center(child: Text("아직 주변에 코스그리기를 통해 달린 사람이 없다모!"))
+                      : ListView.builder(
                     scrollDirection: Axis.horizontal,
-                    children: _nearbyCourseThumbnails,
+                    itemCount: _recommendedCourses.length,
+                    itemBuilder: (context, index) {
+                      final course = _recommendedCourses[index];
+                      return GestureDetector(
+                        onTap: () => _showCourseConfirmationDialog(course),
+                        child: Container(
+                          width: 100,
+                          margin: EdgeInsets.only(right: 10),
+                          decoration: BoxDecoration(
+                            color: Colors.grey[300],
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                '${course.distance.toStringAsFixed(2)} km',
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                              SizedBox(height: 4),
+                              Text(
+                                '추천 ${course.recommendationCount}',
+                                style: TextStyle(fontSize: 12),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
                   ),
                 ),
               ],
             ),
           ),
+          if (_currentLocation == null)
+            Center(
+              child: CircularProgressIndicator(),
+            ),
         ],
       ),
     );
   }
 
   void _onPanUpdate(DragUpdateDetails details) async {
-    if (_mapController == null) return;
+    if (!_mapController.isCompleted) return;
     RenderBox renderBox = context.findRenderObject() as RenderBox;
     Offset localPosition = renderBox.globalToLocal(details.localPosition);
 
@@ -150,9 +225,9 @@ class _CourseDrawingScreenState extends State<CourseDrawingScreen> {
       _sketchPoints.add(localPosition);
     });
 
-    // 매 업데이트마다 bounds를 가져오지 않고, 주기적으로 업데이트
     if (_lastBounds == null || _sketchPoints.length % 10 == 0) {
-      _lastBounds = await _mapController!.getVisibleRegion();
+      final GoogleMapController controller = await _mapController.future;
+      _lastBounds = await controller.getVisibleRegion();
     }
   }
 
@@ -208,11 +283,50 @@ class _CourseDrawingScreenState extends State<CourseDrawingScreen> {
     ));
   }
 
-  void _finishDrawing() {
+  void _finishDrawing() async {
     _convertSketchToLatLng();
+    if (_points.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('코스를 그려주세요모!'))
+      );
+      return;
+    }
+
     final courseProvider = Provider.of<CourseProvider>(context, listen: false);
-    courseProvider.analyzeAndRecommendCourse(_points);
-    Navigator.pushNamed(context, '/course_analysis_result');
+
+    // 로딩 다이얼로그 표시
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          content: Row(
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(width: 20),
+              Text("코스를 분석 중이다모..."),
+            ],
+          ),
+        );
+      },
+    );
+
+    try {
+      await courseProvider.analyzeAndRecommendCourse(_points);
+
+      // 로딩 다이얼로그 닫기
+      Navigator.of(context).pop();
+
+      // 분석 결과 화면으로 이동
+      Navigator.pushNamed(context, '/course_analysis_result', arguments: _points);
+    } catch (e) {
+      // 로딩 다이얼로그 닫기
+      Navigator.of(context).pop();
+
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('코스 분석에 실패했다모: $e'))
+      );
+    }
   }
 }
 
