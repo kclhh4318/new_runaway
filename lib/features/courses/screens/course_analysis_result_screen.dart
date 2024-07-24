@@ -12,19 +12,22 @@ import 'package:new_runaway/features/running/screens/running_session_screen.dart
 import 'package:new_runaway/features/running/running_provider.dart';
 import 'package:flutter/rendering.dart';
 
+import '../../../models/recommended_course.dart';
 import '../../../utils/logger.dart';
 import '../../../models/course.dart'; // 추가된 부분
+
 class CourseAnalysisResultScreen extends StatelessWidget {
   final logger = Logger('CourseAnalysisResultScreen');
   final GlobalKey _globalKey = GlobalKey();
-  final Course course; // 추가된 부분
+  final RecommendedCourse course; // 수정된 부분
 
-  CourseAnalysisResultScreen({required this.course}); // 추가된 부분
+  CourseAnalysisResultScreen({required this.course}); // 수정된 부분
 
   @override
   Widget build(BuildContext context) {
     final courseProvider = Provider.of<CourseProvider>(context);
-    final recommendedCourse = courseProvider.recommendedCourse;
+    // 여기서 recommendedCourse 사용 대신 course 사용
+    final recommendedCourse = course;
 
     return Scaffold(
       appBar: AppBar(title: Text('코스 분석 결과')),
@@ -59,22 +62,20 @@ class CourseAnalysisResultScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('총 거리: ${courseProvider.totalDistance.toStringAsFixed(2)} km',
+                Text('총 거리: ${recommendedCourse.distance.toStringAsFixed(2)} km',
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                 SizedBox(height: 8),
-                Text('코스 설명: ${recommendedCourse?.description.split('.').first ?? ""}',
+                Text('코스 설명: ${recommendedCourse.description.split('.').first}',
                     style: TextStyle(fontSize: 16)),
                 SizedBox(height: 8),
-                Text('안전 팁: ${recommendedCourse?.safetyTips.isNotEmpty == true ? recommendedCourse!.safetyTips.first : ""}',
+                Text('안전 팁: ${recommendedCourse.safetyTips.isNotEmpty ? recommendedCourse.safetyTips.first : ""}',
                     style: TextStyle(fontSize: 16)),
                 SizedBox(height: 16),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
                     ElevatedButton(
-                      onPressed: recommendedCourse != null
-                          ? () => _showCountdownAndStartRunning(context, recommendedCourse.points)
-                          : null,
+                      onPressed: () => _showCountdownAndStartRunning(context, recommendedCourse.points),
                       child: Text('GO!'),
                     ),
                     ElevatedButton(
@@ -187,3 +188,4 @@ class CourseAnalysisResultScreen extends StatelessWidget {
     }
   }
 }
+

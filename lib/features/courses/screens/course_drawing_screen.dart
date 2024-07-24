@@ -5,7 +5,8 @@ import 'package:provider/provider.dart';
 import 'package:new_runaway/features/courses/course_provider.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:new_runaway/services/api_service.dart';
-import 'package:new_runaway/models/course.dart';
+import 'package:new_runaway/models/recommended_course.dart';
+import 'package:new_runaway/models/course.dart'; // Course 클래스를 import
 import 'package:new_runaway/features/courses/screens/course_analysis_result_screen.dart';
 
 class CourseDrawingScreen extends StatefulWidget {
@@ -24,7 +25,7 @@ class _CourseDrawingScreenState extends State<CourseDrawingScreen> {
   List<Offset> _sketchPoints = [];
   LatLngBounds? _lastBounds;
   final ApiService _apiService = ApiService();
-  List<Course> _recommendedCourses = [];
+  List<RecommendedCourse> _recommendedCourses = []; // 수정된 부분
 
   @override
   void initState() {
@@ -40,7 +41,7 @@ class _CourseDrawingScreenState extends State<CourseDrawingScreen> {
           _currentLocation!.longitude
       );
       setState(() {
-        _recommendedCourses = courses;
+        _recommendedCourses = courses.map((course) => convertCourseToRecommendedCourse(course)).toList();
       });
     } catch (e) {
       print('추천 코스를 불러오는 데 실패했다모: $e');
@@ -76,7 +77,7 @@ class _CourseDrawingScreenState extends State<CourseDrawingScreen> {
     controller.animateCamera(CameraUpdate.newLatLng(_currentLocation!));
   }
 
-  void _showCourseConfirmationDialog(Course course) {
+  void _showCourseConfirmationDialog(RecommendedCourse course) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -93,7 +94,7 @@ class _CourseDrawingScreenState extends State<CourseDrawingScreen> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => CourseAnalysisResultScreen(course: course), // 수정된 부분
+                  builder: (context) => CourseAnalysisResultScreen(course: course),
                 ),
               );
             },
@@ -184,7 +185,7 @@ class _CourseDrawingScreenState extends State<CourseDrawingScreen> {
                               ),
                               SizedBox(height: 4),
                               Text(
-                                '추천 ${course.recommendationCount}',
+                                '추천 ${course.pointsOfInterest.length}', // 추천 수를 포인트 오브 인터레스트 수로 대체
                                 style: TextStyle(fontSize: 12),
                               ),
                             ],
@@ -307,8 +308,16 @@ class _CourseDrawingScreenState extends State<CourseDrawingScreen> {
       // 로딩 다이얼로그 닫기
       Navigator.of(context).pop();
 
-      // 분석 결과 화면으로 이동
-      Navigator.pushNamed(context, '/course_analysis_result', arguments: _points);
+      final recommendedCourse = courseProvider.recommendedCourse;
+      if (recommendedCourse != null) {
+        // 분석 결과 화면으로 이동
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => CourseAnalysisResultScreen(course: recommendedCourse), // RecommendedCourse 객체 전달
+          ),
+        );
+      }
     } catch (e) {
       // 로딩 다이얼로그 닫기
       Navigator.of(context).pop();
@@ -339,4 +348,15 @@ class SketchPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(SketchPainter oldDelegate) => true;
+}
+
+// Course 객체를 RecommendedCourse 객체로 변환하는 메서드
+RecommendedCourse convertCourseToRecommendedCourse(Course course) {
+  return RecommendedCourse(
+    points: [], // 필요한 경우 실제 데이터를 채워야 합니다.
+    distance: course.distance,
+    description: '', // 필요한 경우 실제 데이터를 채워야 합니다.
+    safetyTips: [], // 필요한 경우 실제 데이터를 채워야 합니다.
+    pointsOfInterest: [], // 필요한 경우 실제 데이터를 채워야 합니다.
+  );
 }

@@ -20,7 +20,7 @@ class RecommendedCourse {
       points: (json['coordinates'] as List).map((point) {
         return LatLng(point['latitude'] as double, point['longitude'] as double);
       }).toList(),
-      distance: json['distance'] as double,
+      distance: (json['distance'] as num).toDouble(),
       description: json['description'] as String,
       safetyTips: (json['safetyTips'] as List).cast<String>(),
       pointsOfInterest: (json['pointsOfInterest'] as List?)?.cast<String>() ?? ['관심 지점 정보가 없습니다.'],

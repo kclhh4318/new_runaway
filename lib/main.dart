@@ -16,6 +16,8 @@ import 'package:new_runaway/models/course.dart';
 import 'features/stats/screens/all_runs_screen.dart';
 import 'package:mongo_dart/mongo_dart.dart';
 
+import 'models/recommended_course.dart';
+
 void main() async {
   setupLogger();
 
@@ -90,7 +92,7 @@ class MyApp extends StatelessWidget {
         ),
         routes: {
           '/course_analysis_result': (context) => CourseAnalysisResultScreen(
-            course: ModalRoute.of(context)!.settings.arguments as Course, // 수정된 부분
+            course: ModalRoute.of(context)!.settings.arguments as RecommendedCourse, // 수정된 부분
           ),
           '/all_runs': (context) => AllRunsScreen(),
         },
@@ -98,3 +100,4 @@ class MyApp extends StatelessWidget {
     );
   }
 }
+

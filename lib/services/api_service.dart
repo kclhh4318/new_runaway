@@ -1,3 +1,4 @@
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:new_runaway/config/app_config.dart';
@@ -95,8 +96,21 @@ class ApiService {
     logger.info('Ending running session');
     logger.info('Session ID: $sessionId');
     logger.info('Course ID being sent to server: $courseId');
-    logger.info('Session data: $sessionData');
-    final response = await post('running_sessions/$sessionId/end', sessionData);
+
+    final fullSessionData = {
+      ...sessionData,
+      'course_id': courseId,
+    };
+
+    logger.info('Full session data being sent to server:');
+    logger.info(json.encode(fullSessionData, toEncodable: (object) {
+      if (object is LatLng) {
+        return {'latitude': object.latitude, 'longitude': object.longitude};
+      }
+      return object.toString();
+    }));
+
+    final response = await post('running_sessions/$sessionId/end', fullSessionData);
     logger.info('Running session end response: ${response.body}');
   }
 

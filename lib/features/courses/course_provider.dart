@@ -58,7 +58,7 @@ Ensure your JSON is valid and contains no additional formatting or markdown.
 ''';
 
       final recommendation = await _openAIService.getRecommendedCourse(prompt);
-      print('OpenAI recommendation: $recommendation'); // 디버깅을 위한 로그
+      print('OpenAI recommendation: $recommendation');
       _recommendedCourse = _parseRecommendation(recommendation);
       _totalDistance = _recommendedCourse!.distance;
       notifyListeners();
