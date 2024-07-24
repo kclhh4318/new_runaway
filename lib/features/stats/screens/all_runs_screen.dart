@@ -38,8 +38,10 @@ class _AllRunsScreenState extends State<AllRunsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: Colors.white, // 배경색 설정
         title: Text('모든 러닝 기록'),
       ),
+      backgroundColor: Colors.white, // 배경색 설정
       body: _isLoading
           ? Center(child: CircularProgressIndicator())
           : ListView.builder(

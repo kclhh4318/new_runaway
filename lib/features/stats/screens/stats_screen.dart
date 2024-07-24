@@ -1,5 +1,12 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
+import 'package:new_runaway/config/app_config.dart';
+import 'package:new_runaway/services/api_service.dart';
+import 'package:new_runaway/services/token_service.dart';
+import 'package:new_runaway/services/storage_service.dart';
+import 'package:new_runaway/utils/logger.dart';
 import 'package:new_runaway/features/courses/screens/course_drawing_screen.dart';
 import 'package:new_runaway/features/running/screens/running_session_screen.dart';
 import 'package:new_runaway/features/stats/widgets/period_selector.dart';
@@ -24,10 +31,20 @@ class _StatsScreenState extends State<StatsScreen> {
   String _selectedPeriod = '년';
   DateTime _selectedDate = DateTime.now();
 
+  double _totalDistance = 0;
+  int _totalDuration = 0;
+  double _averagePace = 0;
+  int _totalRuns = 0;
+  double _averageDistance = 0;
+
+  final ApiService _apiService = ApiService();
+  final StorageService _storageService = StorageService();
+
   @override
   void initState() {
     super.initState();
     _scrollController.addListener(_scrollListener);
+    _fetchStats();
   }
 
   void _scrollListener() {
@@ -35,6 +52,28 @@ class _StatsScreenState extends State<StatsScreen> {
       setState(() => _showRunningButtons = false);
     } else if (_scrollController.offset <= 100 && !_showRunningButtons) {
       setState(() => _showRunningButtons = true);
+    }
+  }
+
+  Future<void> _fetchStats() async {
+    try {
+      final userId = await _storageService.getUserId();
+      if (userId == null) {
+        throw Exception('User ID not found');
+      }
+      final response = await _apiService.getStats(_selectedPeriod, userId);
+      print('API response: $response'); // 디버깅을 위한 로깅
+
+      setState(() {
+        _totalDistance = response[_selectedPeriod == '전체' ? 'totally' : _selectedPeriod.toLowerCase()]['distance'];
+        _totalDuration = response[_selectedPeriod == '전체' ? 'totally' : _selectedPeriod.toLowerCase()]['duration'];
+        _averagePace = response[_selectedPeriod == '전체' ? 'totally' : _selectedPeriod.toLowerCase()]['average_pace'];
+        _totalRuns = response[_selectedPeriod == '전체' ? 'totally' : _selectedPeriod.toLowerCase()]['count'];
+        _averageDistance = _totalRuns == 0 ? 0 : _totalDistance / _totalRuns;
+      });
+    } catch (e) {
+      // 에러 핸들링
+      print('통계 정보를 가져오지 못했습니다: $e');
     }
   }
 
@@ -57,6 +96,7 @@ class _StatsScreenState extends State<StatsScreen> {
                         onPeriodSelected: (period) {
                           setState(() {
                             _selectedPeriod = period;
+                            _fetchStats(); // 새로운 기간 선택 시 데이터 가져오기
                           });
                         },
                       ),
@@ -81,7 +121,7 @@ class _StatsScreenState extends State<StatsScreen> {
   Widget _buildTotalStats() {
     return Container(
       padding: EdgeInsets.all(16),
-      child: const Column(
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
@@ -91,7 +131,7 @@ class _StatsScreenState extends State<StatsScreen> {
           Row(
             children: [
               Text(
-                '99,999',
+                _totalDistance.toStringAsFixed(2),
                 style: TextStyle(
                   height: 1.2,
                   fontSize: 50,
@@ -100,9 +140,9 @@ class _StatsScreenState extends State<StatsScreen> {
                   fontStyle: FontStyle.italic,
                 ),
               ),
-              SizedBox(width: 6), // km 텍스트와 거리 사이의 간격
+              SizedBox(width: 6),
               Baseline(
-                baseline: 45, // 텍스트의 베이스라인 위치 조정
+                baseline: 45,
                 baselineType: TextBaseline.alphabetic,
                 child: Text(
                   'km',
@@ -114,13 +154,13 @@ class _StatsScreenState extends State<StatsScreen> {
               ),
             ],
           ),
-          SizedBox(height: 16), // 총 킬로미터와 총 시간 사이의 간격
+          SizedBox(height: 16),
           Text(
             '총 시간',
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
           ),
           Text(
-            '999:99',
+            _formatDuration(_totalDuration),
             style: TextStyle(
               height: 1.2,
               fontSize: 50,
@@ -129,7 +169,7 @@ class _StatsScreenState extends State<StatsScreen> {
               fontStyle: FontStyle.italic,
             ),
           ),
-          SizedBox(height: 16), // 총 시간과 추가 정보 사이의 간격
+          SizedBox(height: 16),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -141,7 +181,7 @@ class _StatsScreenState extends State<StatsScreen> {
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                   Text(
-                    '05:30',
+                    _formatPace(_averagePace),
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                 ],
@@ -154,7 +194,7 @@ class _StatsScreenState extends State<StatsScreen> {
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                   Text(
-                    '05 km',
+                    '${_averageDistance.toStringAsFixed(2)} km',
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                 ],
@@ -167,7 +207,7 @@ class _StatsScreenState extends State<StatsScreen> {
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                   Text(
-                    '959 회',
+                    '$_totalRuns 회',
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                 ],
@@ -178,6 +218,7 @@ class _StatsScreenState extends State<StatsScreen> {
       ),
     );
   }
+
 
   Widget _buildDateFilter() {
     return Padding(
