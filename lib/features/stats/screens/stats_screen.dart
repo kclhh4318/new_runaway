@@ -77,6 +77,22 @@ class _StatsScreenState extends State<StatsScreen> {
     }
   }
 
+  Future<Map<String, int>> _fetchCourseStatistics(String userId) async {
+    final drawCourseCountResponse = await http.get(Uri.parse('${AppConfig.apiBaseUrl}/courses/count/$userId/0'));
+    final recommendedCourseCountResponse = await http.get(Uri.parse('${AppConfig.apiBaseUrl}/courses/count/$userId/1'));
+
+    if (drawCourseCountResponse.statusCode == 200 && recommendedCourseCountResponse.statusCode == 200) {
+      final drawCourseCount = int.parse(drawCourseCountResponse.body);
+      final recommendedCourseCount = int.parse(recommendedCourseCountResponse.body);
+      return {
+        'drawCourseCount': drawCourseCount,
+        'recommendedCourseCount': recommendedCourseCount,
+      };
+    } else {
+      throw Exception('Failed to load course statistics');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Consumer<ApiService>(
@@ -262,23 +278,45 @@ class _StatsScreenState extends State<StatsScreen> {
     );
   }
 
+
   Widget _buildCourseStatistics() {
-    return Container(
-      padding: EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('코스 통계', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-          SizedBox(height: 10),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              _buildCourseStatItem('코스 그리기로 달린 횟수', '15'),
-              _buildCourseStatItem('코스 추천으로 달린 횟수', '8'),
-            ],
-          ),
-        ],
-      ),
+    return FutureBuilder<String?>(
+      future: StorageService().getUserId(),
+      builder: (context, userIdSnapshot) {
+        if (!userIdSnapshot.hasData || userIdSnapshot.data == null) {
+          return Center(child: Text('User ID not found'));
+        }
+
+        return FutureBuilder<Map<String, int>>(
+          future: _fetchCourseStatistics(userIdSnapshot.data!),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return Center(child: CircularProgressIndicator());
+            } else if (snapshot.hasError) {
+              return Center(child: Text('데이터가 없습니다. 지금 당장 런닝을 시작해보세요!', style: TextStyle(fontSize: 16)));
+            } else {
+              final data = snapshot.data!;
+              return Container(
+                padding: EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('코스 통계', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    SizedBox(height: 10),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        _buildCourseStatItem('코스 그리기로 달린 횟수', data['drawCourseCount'].toString()),
+                        _buildCourseStatItem('코스 추천으로 달린 횟수', data['recommendedCourseCount'].toString()),
+                      ],
+                    ),
+                  ],
+                ),
+              );
+            }
+          },
+        );
+      },
     );
   }
 
