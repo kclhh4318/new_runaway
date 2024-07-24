@@ -64,12 +64,14 @@ class _RunResultScreenState extends State<RunResultScreen> {
       },
       child: Scaffold(
         appBar: AppBar(
+          backgroundColor: Colors.white,
           title: const Text('러닝 결과'),
           leading: IconButton(
             icon: const Icon(Icons.home),
             onPressed: _showExitConfirmationDialog,
           ),
         ),
+        backgroundColor: Colors.white,
         body: SingleChildScrollView(
           child: Column(
             children: [
@@ -142,7 +144,7 @@ class _RunResultScreenState extends State<RunResultScreen> {
                     child: Container(
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(10),
-                        color: _runningIntensity == 10 ? Color(0xFFFF5200) : Color(0xFF0064FF),
+                        color: _getIntensityColor(_runningIntensity),
                       ),
                     ),
                   ),
@@ -165,6 +167,20 @@ class _RunResultScreenState extends State<RunResultScreen> {
     );
   }
 
+  Color _getIntensityColor(int intensity) {
+    if (intensity >= 1 && intensity <= 3) {
+      return Color(0xFF9FC5FF);
+    } else if (intensity >= 4 && intensity <= 6) {
+      return Color(0xFF5698FF);
+    } else if (intensity >= 7 && intensity <= 9) {
+      return Color(0xFF0064FF);
+    } else if (intensity == 10) {
+      return Color(0xFFFF5200);
+    } else {
+      return Color(0xFF0064FF); // 기본 색상
+    }
+  }
+
   String _formatTime(int seconds) {
     final hours = seconds ~/ 3600;
     final minutes = (seconds % 3600) ~/ 60;
@@ -183,12 +199,16 @@ class _RunResultScreenState extends State<RunResultScreen> {
     return showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.all(Radius.circular(10.0)), // 모서리를 둥글게 설정
+        ),
         title: const Text('러닝 세션 종료'),
         content: const Text('메인 화면으로 돌아가시겠습니까? 이 작업은 러닝 세션을 종료하고 결과를 저장합니다.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('취소'),
+            child: const Text('취소', style: TextStyle(color: Colors.black),),
           ),
           TextButton(
             onPressed: () async {
@@ -196,7 +216,7 @@ class _RunResultScreenState extends State<RunResultScreen> {
               Navigator.of(context).pop(true);
               Navigator.of(context).popUntil((route) => route.isFirst);
             },
-            child: const Text('확인'),
+            child: const Text('확인', style: TextStyle(color: Colors.black),),
           ),
         ],
       ),

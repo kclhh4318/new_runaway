@@ -108,7 +108,7 @@ class _CourseDrawingScreenState extends State<CourseDrawingScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('코스 그리기')),
+      appBar: AppBar(title: const Text('코스 그리기'), backgroundColor: Colors.white,),
       body: Stack(
         children: [
           GoogleMap(
@@ -144,15 +144,25 @@ class _CourseDrawingScreenState extends State<CourseDrawingScreen> {
                   children: [
                     ElevatedButton(
                       onPressed: _toggleDrawingMode,
+                      style: ElevatedButton.styleFrom(
+                        foregroundColor: Color(0xFF0064FF), backgroundColor: Colors.white, // 폰트색
+                      ),
                       child: Text(_isDrawingMode ? '드로잉 종료' : '드로잉 시작'),
                     ),
                     if (_isDrawingMode)
                       ElevatedButton(
                         onPressed: _clearDrawing,
-                        child: Text('다시 그리기'),
+                        style: ElevatedButton.styleFrom(
+                          foregroundColor: Color(0xFF0064FF), backgroundColor: Colors.white, // 폰트색
+                        ),
+                        child: Text('다시 그리기')
                       ),
+                    SizedBox(width: 24),
                     ElevatedButton(
                       onPressed: _finishDrawing,
+                      style: ElevatedButton.styleFrom(
+                        foregroundColor: Colors.white, backgroundColor: Color(0xFF0064FF), // 폰트색
+                      ),
                       child: Text('완료'),
                     ),
                   ],

@@ -10,7 +10,6 @@ import 'package:new_runaway/features/courses/course_provider.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:new_runaway/features/running/screens/running_session_screen.dart';
 import 'package:new_runaway/features/running/running_provider.dart';
-import 'package:flutter/rendering.dart';
 
 import '../../../models/recommended_course.dart';
 import '../../../utils/logger.dart';
@@ -30,7 +29,7 @@ class CourseAnalysisResultScreen extends StatelessWidget {
     final recommendedCourse = course;
 
     return Scaffold(
-      appBar: AppBar(title: Text('코스 분석 결과')),
+      appBar: AppBar(title: Text('코스 분석 결과'), backgroundColor: Colors.white,),
       body: Column(
         children: [
           Expanded(
@@ -57,7 +56,8 @@ class CourseAnalysisResultScreen extends StatelessWidget {
             )
                 : Center(child: CircularProgressIndicator()),
           ),
-          Padding(
+          Container(
+            color: Colors.white, // 배경색 설정
             padding: const EdgeInsets.all(16.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -77,8 +77,18 @@ class CourseAnalysisResultScreen extends StatelessWidget {
                     ElevatedButton(
                       onPressed: () => _showCountdownAndStartRunning(context, recommendedCourse.points),
                       child: Text('GO!'),
+                      style: ElevatedButton.styleFrom(
+                        foregroundColor: Colors.white, backgroundColor: Color(0xFF0064FF),
+                      ),
+                      onPressed: recommendedCourse != null
+                          ? () => _showCountdownAndStartRunning(context, recommendedCourse.points)
+                          : null,
+                      child: Text('RUN!'),
                     ),
                     ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        foregroundColor: Colors.white, backgroundColor: Color(0xFF0064FF),
+                      ),
                       onPressed: () async {
                         await courseProvider.reanalyze();
                         ScaffoldMessenger.of(context).showSnackBar(
@@ -188,4 +198,3 @@ class CourseAnalysisResultScreen extends StatelessWidget {
     }
   }
 }
-
