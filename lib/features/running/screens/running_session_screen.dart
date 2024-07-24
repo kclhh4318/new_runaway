@@ -208,13 +208,13 @@ class _RunningSessionScreenState extends State<RunningSessionScreen> {
         context,
         MaterialPageRoute(
           builder: (context) => RunResultScreen(
-            sessionId: sessionData['sessionId'],
-            distance: sessionData['distance'],
-            duration: sessionData['duration'],
-            avgPace: sessionData['avgPace'],
-            currentPace: sessionData['currentPace'],
-            route: sessionData['route'],
-            courseId: sessionData['courseId'],  // courseId 추가
+            sessionId: sessionData['sessionId'] ?? '',
+            distance: sessionData['distance'] ?? 0.0,
+            duration: sessionData['duration'] ?? 0,
+            avgPace: sessionData['avgPace'] ?? 0.0,
+            currentPace: sessionData['currentPace'] ?? 0.0,
+            route: sessionData['route'] ?? [],
+            courseId: sessionData['courseId'] ?? '',
           ),
         ),
       );

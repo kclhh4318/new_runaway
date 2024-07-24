@@ -5,6 +5,7 @@ import 'package:new_runaway/services/token_service.dart';
 import 'package:new_runaway/services/storage_service.dart';
 import 'package:new_runaway/utils/logger.dart';
 import 'package:new_runaway/models/running_session.dart';
+import 'package:new_runaway/models/course.dart';
 
 class ApiService {
   final String baseUrl = AppConfig.apiBaseUrl;
@@ -12,17 +13,26 @@ class ApiService {
   final StorageService _storageService = StorageService();
 
   Future<dynamic> get(String endpoint) async {
-    return _request(() async => http.get(
+    logger.info('Sending GET request to endpoint: $endpoint');
+    final headers = await _getHeaders();
+    logger.info('Request headers: $headers');
+
+    final response = await http.get(
       Uri.parse('$baseUrl/$endpoint'),
-      headers: await _getHeaders(),
-    ));
+      headers: headers,
+    );
+
+    logger.info('Response status code: ${response.statusCode}');
+    logger.info('Response body: ${response.body}');
+
+    return _handleResponse(response);
   }
 
-  Future<http.Response> post(String endpoint, dynamic data, {Map<String, String>? headers}) async {
+  Future<http.Response> post(String endpoint, dynamic data, {Map<String, String>? additionalHeaders}) async {
     logger.info('Sending POST request to endpoint: $endpoint');
     final allHeaders = await _getHeaders();
-    if (headers != null) {
-      allHeaders.addAll(headers);
+    if (additionalHeaders != null) {
+      allHeaders.addAll(additionalHeaders);
     }
     logger.info('Request headers: $allHeaders');
     logger.info('Request body: ${json.encode(data)}');
@@ -75,7 +85,7 @@ class ApiService {
     final response = await post(
       'running_sessions/start',
       {},
-      headers: {'x-user-id': userId ?? ''},
+      additionalHeaders: {'x-user-id': userId ?? ''},
     );
     logger.info('Running session start response: ${response.body}');
     return json.decode(response.body);
@@ -236,4 +246,30 @@ class ApiService {
     }
   }
 
+  Future<List<Course>> getLatestCourses(double latitude, double longitude) async {
+    final data = {
+      'latitude': latitude,
+      'longitude': longitude,
+    };
+
+    logger.info('Sending request to /courses/latest with data: $data');
+
+    try {
+      final response = await post('courses/latest', data);
+
+      logger.info('Received response from /courses/latest');
+      logger.info('Status code: ${response.statusCode}');
+      logger.info('Response body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final List<dynamic> jsonList = json.decode(response.body);
+        return jsonList.map((json) => Course.fromJson(json)).toList();
+      } else {
+        throw Exception('최신 코스를 불러오는 데 실패했다모! 상태 코드: ${response.statusCode}, 응답: ${response.body}');
+      }
+    } catch (e) {
+      logger.severe('Error in getLatestCourses: $e');
+      rethrow;
+    }
+  }
 }

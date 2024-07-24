@@ -19,6 +19,7 @@ dependencies:
   google_maps_flutter: ^2.1.3
   flutter_polyline_points: ^1.0.0
   logging: ^1.0.2
+  mongo_dart: ^0.9.1  # 추가된 종속성
 
 dev_dependencies:
   flutter_test:

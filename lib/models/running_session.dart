@@ -17,11 +17,11 @@ class RunningSession {
 
   factory RunningSession.fromJson(Map<String, dynamic> json) {
     return RunningSession(
-      id: json['_id'] as String,  // '_id'로 변경
+      id: json['_id'] as String,
       date: DateTime.parse(json['date']),
       distance: (json['distance'] as num).toDouble(),
       duration: (json['duration'] as num).toInt(),
-      averagePace: (json['average_pace'] as num).toDouble(),  // 'average_pace'로 변경
+      averagePace: (json['average_pace'] as num).toDouble(),
       strength: (json['strength'] as num).toInt(),
     );
   }
@@ -33,7 +33,7 @@ class RunningSession {
       'distance': distance,
       'duration': duration,
       'averagePace': averagePace,
-      'strength': strength, // 새로 추가된 속성
+      'strength': strength,
     };
   }
 }

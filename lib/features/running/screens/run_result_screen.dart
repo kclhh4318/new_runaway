@@ -23,7 +23,7 @@ class RunResultScreen extends StatefulWidget {
     required this.avgPace,
     required this.currentPace,
     required this.route,
-    required this.courseId
+    required this.courseId,
   }) : super(key: key);
 
   @override
@@ -214,8 +214,7 @@ class _RunResultScreenState extends State<RunResultScreen> {
         "longitude": point.longitude
       }).toList(),
       "strength": _runningIntensity,
-      "course_id": widget.courseId,  // courseId 추가
-
+      "course_id": widget.courseId,
     };
 
     logger.info('Ending running session');
@@ -225,7 +224,7 @@ class _RunResultScreenState extends State<RunResultScreen> {
     try {
       final runningProvider = Provider.of<RunningProvider>(context, listen: false);
       logger.info('Ending running session. Session ID: ${widget.sessionId}, Course ID: ${runningProvider.courseId}');
-      await _apiService.endRunningSession(widget.sessionId, sessionData, runningProvider.courseId);
+      await _apiService.endRunningSession(widget.sessionId, sessionData, runningProvider.courseId ?? '');
       logger.info('Successfully ended running session');
       logger.info('Final Course ID sent to server: ${runningProvider.courseId}');
       runningProvider.resetSession();
