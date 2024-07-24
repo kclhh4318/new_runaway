@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:new_runaway/models/stats.dart';
 import 'package:provider/provider.dart';
 import 'package:new_runaway/config/app_config.dart';
 import 'package:new_runaway/services/api_service.dart';
@@ -64,32 +65,41 @@ class _StatsScreenState extends State<StatsScreen> {
       final response = await _apiService.getStats(_selectedPeriod, userId);
       print('API response: $response'); // 디버깅을 위한 로깅
 
+      final statsKey = _selectedPeriod == '전체' ? 'totally' : (_selectedPeriod == '주' ? 'weekly' : (_selectedPeriod == '월' ? 'monthly' : 'yearly'));
+      if (!response.containsKey(statsKey) || response[statsKey] == null) {
+        // 통계를 사용할 수 없는 경우 기본 값을 사용합니다.
+        setState(() {
+          _totalDistance = 0;
+          _totalDuration = 0;
+          _averagePace = 0;
+          _totalRuns = 0;
+          _averageDistance = 0;
+        });
+        return;
+      }
+
+      final statsData = response[statsKey];
+      print('Stats data: $statsData'); // 디버깅을 위한 로깅
+
+      final stats = Stats.fromJson(statsData ?? {});
+      print('Parsed stats: $stats'); // 디버깅을 위한 로깅
+
       setState(() {
-        _totalDistance = response[_selectedPeriod == '전체' ? 'totally' : _selectedPeriod.toLowerCase()]['distance'];
-        _totalDuration = response[_selectedPeriod == '전체' ? 'totally' : _selectedPeriod.toLowerCase()]['duration'];
-        _averagePace = response[_selectedPeriod == '전체' ? 'totally' : _selectedPeriod.toLowerCase()]['average_pace'];
-        _totalRuns = response[_selectedPeriod == '전체' ? 'totally' : _selectedPeriod.toLowerCase()]['count'];
+        _totalDistance = stats.distance;
+        _totalDuration = stats.duration;
+        _averagePace = stats.averagePace;
+        _totalRuns = stats.count;
         _averageDistance = _totalRuns == 0 ? 0 : _totalDistance / _totalRuns;
+        print('State updated:');
+        print('_totalDistance: $_totalDistance');
+        print('_totalDuration: $_totalDuration');
+        print('_averagePace: $_averagePace');
+        print('_totalRuns: $_totalRuns');
+        print('_averageDistance: $_averageDistance');
       });
     } catch (e) {
       // 에러 핸들링
       print('통계 정보를 가져오지 못했습니다: $e');
-    }
-  }
-
-  Future<Map<String, int>> _fetchCourseStatistics(String userId) async {
-    final drawCourseCountResponse = await http.get(Uri.parse('${AppConfig.apiBaseUrl}/courses/count/$userId/0'));
-    final recommendedCourseCountResponse = await http.get(Uri.parse('${AppConfig.apiBaseUrl}/courses/count/$userId/1'));
-
-    if (drawCourseCountResponse.statusCode == 200 && recommendedCourseCountResponse.statusCode == 200) {
-      final drawCourseCount = int.parse(drawCourseCountResponse.body);
-      final recommendedCourseCount = int.parse(recommendedCourseCountResponse.body);
-      return {
-        'drawCourseCount': drawCourseCount,
-        'recommendedCourseCount': recommendedCourseCount,
-      };
-    } else {
-      throw Exception('Failed to load course statistics');
     }
   }
 
@@ -112,6 +122,7 @@ class _StatsScreenState extends State<StatsScreen> {
                         onPeriodSelected: (period) {
                           setState(() {
                             _selectedPeriod = period;
+                            print('Selected period: $_selectedPeriod'); // 디버깅을 위한 로깅
                             _fetchStats(); // 새로운 기간 선택 시 데이터 가져오기
                           });
                         },
@@ -235,7 +246,6 @@ class _StatsScreenState extends State<StatsScreen> {
     );
   }
 
-
   Widget _buildDateFilter() {
     return Padding(
       padding: const EdgeInsets.all(16.0),
@@ -277,8 +287,21 @@ class _StatsScreenState extends State<StatsScreen> {
       ),
     );
   }
+  Future<Map<String, int>> _fetchCourseStatistics(String userId) async {
+    final drawCourseCountResponse = await http.get(Uri.parse('${AppConfig.apiBaseUrl}/courses/count/$userId/0'));
+    final recommendedCourseCountResponse = await http.get(Uri.parse('${AppConfig.apiBaseUrl}/courses/count/$userId/1'));
 
-
+    if (drawCourseCountResponse.statusCode == 200 && recommendedCourseCountResponse.statusCode == 200) {
+      final drawCourseCount = int.parse(drawCourseCountResponse.body);
+      final recommendedCourseCount = int.parse(recommendedCourseCountResponse.body);
+      return {
+        'drawCourseCount': drawCourseCount,
+        'recommendedCourseCount': recommendedCourseCount,
+      };
+    } else {
+      throw Exception('Failed to load course statistics');
+    }
+  }
   Widget _buildCourseStatistics() {
     return FutureBuilder<String?>(
       future: StorageService().getUserId(),
