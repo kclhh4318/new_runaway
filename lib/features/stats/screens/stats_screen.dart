@@ -1,5 +1,12 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
+import 'package:new_runaway/config/app_config.dart';
+import 'package:new_runaway/services/api_service.dart';
+import 'package:new_runaway/services/token_service.dart';
+import 'package:new_runaway/services/storage_service.dart';
+import 'package:new_runaway/utils/logger.dart';
 import 'package:new_runaway/features/courses/screens/course_drawing_screen.dart';
 import 'package:new_runaway/features/running/screens/running_session_screen.dart';
 import 'package:new_runaway/features/stats/widgets/period_selector.dart';
@@ -20,10 +27,17 @@ class _StatsScreenState extends State<StatsScreen> {
   String _selectedPeriod = '년';
   DateTime _selectedDate = DateTime.now();
 
+  double _totalDistance = 0;
+  int _totalDuration = 0;
+
+  final ApiService _apiService = ApiService();
+  final StorageService _storageService = StorageService();
+
   @override
   void initState() {
     super.initState();
     _scrollController.addListener(_scrollListener);
+    _fetchAllTimeStats();
   }
 
   void _scrollListener() {
@@ -34,6 +48,25 @@ class _StatsScreenState extends State<StatsScreen> {
     }
   }
 
+  Future<void> _fetchAllTimeStats() async {
+    try {
+      final userId = await _storageService.getUserId();
+      final response = await _apiService.get('stats/all_time/$userId');
+      setState(() {
+        _totalDistance = response['total_distance']['distance'];
+        _totalDuration = response['total_distance']['duration'];
+      });
+    } catch (e) {
+      // Handle error
+      print('Failed to load statistics: $e');
+    }
+  }
+
+  String _formatDuration(int seconds) {
+    final hours = seconds ~/ 3600;
+    final minutes = (seconds % 3600) ~/ 60;
+    return '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -71,11 +104,10 @@ class _StatsScreenState extends State<StatsScreen> {
     );
   }
 
-
   Widget _buildTotalStats() {
     return Container(
       padding: EdgeInsets.all(16),
-      child: const Column(
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
@@ -85,7 +117,7 @@ class _StatsScreenState extends State<StatsScreen> {
           Row(
             children: [
               Text(
-                '99,999',
+                _totalDistance.toStringAsFixed(2),
                 style: TextStyle(
                   height: 1.2,
                   fontSize: 50,
@@ -114,7 +146,7 @@ class _StatsScreenState extends State<StatsScreen> {
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
           ),
           Text(
-            '999:99',
+            _formatDuration(_totalDuration),
             style: TextStyle(
               height: 1.2,
               fontSize: 50,
@@ -168,12 +200,10 @@ class _StatsScreenState extends State<StatsScreen> {
               ),
             ],
           ),
-
         ],
       ),
     );
-
-}
+  }
 
 
   Widget _buildDateFilter() {
