@@ -320,7 +320,7 @@ class _StatsScreenState extends State<StatsScreen> {
   }
 
   Widget _buildStatsChart() {
-    // userId가 설정된 후에만 StatsBarChart를 생성
+    // 여기서 selectedPeriod가 올바르게 반영되도록 확인합니다.
     if (_userId.isEmpty) {
       return Center(child: CircularProgressIndicator());
     }
@@ -329,13 +329,13 @@ class _StatsScreenState extends State<StatsScreen> {
       height: 200,
       padding: EdgeInsets.all(16),
       child: StatsBarChart(
+        key: ValueKey(_selectedPeriod), // 여기서 key를 사용하여 selectedPeriod 변경을 반영
         selectedPeriod: _selectedPeriod,
         selectedDate: _selectedDate,
         userId: _userId,
       ),
     );
   }
-
   Widget _buildCourseStatistics() {
     return FutureBuilder<String?>(
       future: StorageService().getUserId(),
