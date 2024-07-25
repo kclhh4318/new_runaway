@@ -62,7 +62,7 @@ class _AllRunsScreenState extends State<AllRunsScreen> {
                   painter: CoursePainter(run.route!),
                   size: Size(100, 100),
                 )
-                    : Container(color: Colors.grey[300]),
+                    : Container(color: Colors.grey),
               ),
               SizedBox(width: 10),
               Expanded(

@@ -138,8 +138,8 @@ class _RunningSessionScreenState extends State<RunningSessionScreen> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        _buildPaceItem('평균 페이스', provider.formatPace(provider.avgPace)),
-        _buildPaceItem('현재 페이스', provider.formatPace(provider.currentPace)),
+        _buildPaceItem('평균 페이스', provider.formatPace(provider.avgPace) + ' /km'),
+        _buildPaceItem('현재 페이스', provider.formatPace(provider.currentPace) + ' /km'),
       ],
     );
   }
@@ -147,8 +147,8 @@ class _RunningSessionScreenState extends State<RunningSessionScreen> {
   Widget _buildPaceItem(String label, String value) {
     return Column(
       children: [
-        Text(label, style: TextStyle(color: Colors.black87, fontSize: 16)),
-        Text(value, style: TextStyle(color: Colors.black, fontSize: 24, fontWeight: FontWeight.bold)),
+        Text(label, style: TextStyle(color: Colors.white, fontSize: 16)),
+        Text(value, style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
       ],
     );
   }

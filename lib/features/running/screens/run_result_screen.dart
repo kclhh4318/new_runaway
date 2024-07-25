@@ -206,11 +206,10 @@ class _RunResultScreenState extends State<RunResultScreen> {
     return '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}:${remainingSeconds.toString().padLeft(2, '0')}';
   }
 
-  String _formatPace(double pace) {
-    final paceInSeconds = pace.toInt();
-    final minutes = paceInSeconds ~/ 60;
-    final seconds = paceInSeconds % 60;
-    return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
+  String _formatPace(double paceInSecondsPerKm) {
+    final minutes = paceInSecondsPerKm ~/ 60;
+    final seconds = (paceInSecondsPerKm % 60).toInt();
+    return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')} /km';
   }
 
   Future<bool?> _showExitConfirmationDialog() async {

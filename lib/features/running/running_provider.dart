@@ -17,6 +17,9 @@ class RunningProvider with ChangeNotifier {
   List<LatLng>? _predefinedCourse;
   String? _sessionId;
   String? _courseId;
+  List<double> _recentDistances = [];
+  List<int> _recentTimes = [];
+  final int _recentDataCount = 5; // 현재 페이스 계산을 위한 최근 데이터 개수
 
   Timer? _timer;
   StreamSubscription<Position>? _positionStream;
@@ -131,6 +134,18 @@ class RunningProvider with ChangeNotifier {
           newPoint.latitude, newPoint.longitude,
         );
         _distance += distance / 1000;
+
+        // 최근 거리 데이터 업데이트
+        _recentDistances.add(distance);
+        if (_recentDistances.length > _recentDataCount) {
+          _recentDistances.removeAt(0);
+        }
+
+        // 최근 시간 데이터 업데이트
+        _recentTimes.add(1); // 위치 업데이트 간격을 1초로 가정
+        if (_recentTimes.length > _recentDataCount) {
+          _recentTimes.removeAt(0);
+        }
       }
       _routePoints.add(LatLng(position.latitude, position.longitude));
       _updatePace();
@@ -140,22 +155,22 @@ class RunningProvider with ChangeNotifier {
 
   void _updatePace() {
     if (_distance > 0) {
-      _avgPace = _seconds / _distance / 60; // minutes per km
-      if (_routePoints.length >= 2) {
-        final lastTwoPoints = _routePoints.sublist(_routePoints.length - 2);
-        final lastDistance = Geolocator.distanceBetween(
-          lastTwoPoints[0].latitude, lastTwoPoints[0].longitude,
-          lastTwoPoints[1].latitude, lastTwoPoints[1].longitude,
-        );
-        _currentPace = (1 / (lastDistance / 1000)) / 60; // minutes per km
+      // 평균 페이스 계산 (분/km)
+      _avgPace = _seconds / (_distance / 1000);
+
+      // 현재 페이스 계산
+      if (_recentDistances.length >= _recentDataCount) {
+        double recentDistance = _recentDistances.reduce((a, b) => a + b);
+        int recentTime = _recentTimes.reduce((a, b) => a + b);
+        _currentPace = recentTime / (recentDistance / 1000);
       }
     }
   }
 
   String formatPace(double pace) {
     if (pace.isInfinite || pace.isNaN) return '00:00';
-    final minutes = pace.toInt();
-    final seconds = ((pace - minutes) * 60).toInt();
+    final minutes = pace ~/ 60;
+    final seconds = (pace % 60).toInt();
     return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
   }
 }

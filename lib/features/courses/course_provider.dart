@@ -34,14 +34,13 @@ Given the following drawn course coordinates:
 $pointsJson
 
 Create a running route that closely follows these coordinates while adhering to the following strict rules:
-1. The route MUST follow actual roads, paths, and trails suitable for running.
-2. Every single point of the recommended route MUST be on a real, accessible path.
+1. Prioritize major roads with sidewalks for the route.
+2. Ensure that every point of the recommended route is on a road with a sidewalk or pedestrian path.
 3. The shape and distance of the route should be as close as possible to the original drawn course.
-4. Prioritize pedestrian-friendly areas: sidewalks, park paths, and quiet residential streets.
-5. Absolutely avoid highways, major roads without sidewalks, and any unsafe areas for pedestrians.
-6. Use proper crosswalks or pedestrian crossings when the route needs to cross streets.
-7. If the drawn line goes through obstacles (buildings, water bodies, etc.), find the nearest valid path around the obstacle.
-8. The total distance of the recommended route should be within 10% of the original drawn course length.
+4. Use proper crosswalks or pedestrian crossings when the route needs to cross streets.
+5. If a major road with a sidewalk is not available, choose the next best option that ensures runner safety.
+6. The total distance of the recommended route should be within 15% of the original drawn course length to account for potentially longer routes on major roads.
+7. Include any notable landmarks or points of interest along the major roads in the route description.
 
 Provide your response as a JSON object with these keys:
 coordinates (list of LatLng), distance (km), description, safetyTips, pointsOfInterest
@@ -154,7 +153,7 @@ Ensure your JSON is valid and contains no additional formatting or markdown.
     PolylinePoints polylinePoints = PolylinePoints();
     List<LatLng> refinedPoints = [];
 
-    for (int i = 0; i < drawnPoints.length - 1; i += 2) {  // 격자로 처리
+    for (int i = 0; i < drawnPoints.length - 1; i += 2) {
       PointLatLng start = PointLatLng(drawnPoints[i].latitude, drawnPoints[i].longitude);
       PointLatLng end = PointLatLng(drawnPoints[i + 1].latitude, drawnPoints[i + 1].longitude);
 
@@ -162,7 +161,9 @@ Ensure your JSON is valid and contains no additional formatting or markdown.
         dotenv.env['GOOGLE_MAPS_API_KEY']!,
         start,
         end,
-        travelMode: TravelMode.walking,
+        travelMode: TravelMode.driving,  // walking 대신 driving 사용
+        // 가능하다면 API에서 인도 정보를 요청하는 옵션을 추가할 수 있습니다.
+        // 예: options: {'sidewalks': 'true'}
       );
 
       if (result.points.isNotEmpty) {
