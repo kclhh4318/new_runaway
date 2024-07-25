@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:new_runaway/features/onboarding/widgets/onboarding_content.dart';
 import 'package:new_runaway/features/onboarding/widgets/login_signup_content.dart';
+import 'package:new_runaway/features/onboarding/widgets/start_content.dart';
 
 class StartPage extends StatefulWidget {
   const StartPage({Key? key}) : super(key: key);
@@ -14,10 +15,9 @@ class _StartPageState extends State<StartPage> {
   int _currentPage = 0;
 
   final List<Widget> _pages = [
-    OnboardingContent(
-      title: "시작하기",
-      description: "러닝을 시작해보세요!",
-      image: "assets/images/start.png",
+    StartContent(
+      title: "RUNAWAY",
+      description: "",
     ),
     OnboardingContent(
       title: "당신의 코스를 그려보세요",
