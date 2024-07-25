@@ -87,6 +87,31 @@ class _StatsScreenState extends State<StatsScreen> {
     return Consumer<ApiService>(
       builder: (context, apiService, child) {
         return Scaffold(
+          appBar: AppBar(
+            title: Text('통계'),
+            backgroundColor: Colors.white,
+            actions: [
+              PopupMenuButton<String>(
+                onSelected: (value) {
+                  if (value == 'logout') {
+                    _logout();
+                  }
+                },
+                itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+                  PopupMenuItem<String>(
+                    value: 'logout',
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+
+                      ),
+                      child: Text('로그아웃'),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
           backgroundColor: Colors.white,
           body: Stack(
             children: [
@@ -435,10 +460,16 @@ class _StatsScreenState extends State<StatsScreen> {
 
   Future<void> _logout() async {
     final authService = Provider.of<AuthService>(context, listen: false);
-    await authService.logout();
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (context) => StartPage()),
-          (Route<dynamic> route) => false,
-    );
+    final success = await authService.logout();
+    if (success) {
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (context) => StartPage()),
+            (Route<dynamic> route) => false,
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('로그아웃에 실패했습니다. 다시 시도해주세요.')),
+      );
+    }
   }
 }

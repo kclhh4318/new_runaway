@@ -24,10 +24,15 @@ class CourseProvider extends ChangeNotifier {
   Future<void> analyzeAndRecommendCourse(List<LatLng> drawnPoints) async {
     try {
       final refinedPoints = await _refineDrawnPoints(drawnPoints);
+      if (refinedPoints.isEmpty) {
+        throw Exception('Refined points are empty');
+      }
+
       final pointsJson = refinedPoints.map((point) => {
         'latitude': point.latitude,
         'longitude': point.longitude,
       }).toList();
+
 
       final prompt = '''
 Given the following drawn course coordinates:
@@ -161,14 +166,23 @@ Ensure your JSON is valid and contains no additional formatting or markdown.
         dotenv.env['GOOGLE_MAPS_API_KEY']!,
         start,
         end,
-        travelMode: TravelMode.driving,  // walking 대신 driving 사용
-        // 가능하다면 API에서 인도 정보를 요청하는 옵션을 추가할 수 있습니다.
-        // 예: options: {'sidewalks': 'true'}
+        travelMode: TravelMode.driving,
       );
 
       if (result.points.isNotEmpty) {
         refinedPoints.addAll(result.points.map((point) => LatLng(point.latitude, point.longitude)));
+      } else {
+        // 경로를 찾지 못한 경우, 원본 점들을 사용
+        refinedPoints.add(drawnPoints[i]);
+        if (i + 1 < drawnPoints.length) {
+          refinedPoints.add(drawnPoints[i + 1]);
+        }
       }
+    }
+
+    if (refinedPoints.isEmpty) {
+      // 정제된 점들이 없으면 원본 점들을 그대로 반환
+      return drawnPoints;
     }
 
     return refinedPoints;

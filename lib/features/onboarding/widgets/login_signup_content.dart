@@ -127,7 +127,7 @@ class _LoginSignupContentState extends State<LoginSignupContent> {
           );
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('회원가입에 성공했습니다! 로그인을 시도해보세요.')),
+            SnackBar(content: Text(result['message'] ?? '회원가입에 성공했습니다! 로그인을 시도해보세요.')),
           );
           setState(() {
             _isLogin = true; // 회원가입 후 로그인 모드로 전환
@@ -138,7 +138,7 @@ class _LoginSignupContentState extends State<LoginSignupContent> {
         if (_isLogin) {
           errorMessage = '아이디 또는 비밀번호가 잘못 되었습니다. 아이디와 비밀번호를 정확히 입력해 주세요.';
         } else {
-          errorMessage = '회원가입에 실패했습니다. 다시 시도해 주세요.';
+          errorMessage = result['message'] ?? '회원가입에 실패했습니다. 다시 시도해 주세요.';
         }
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(errorMessage)),

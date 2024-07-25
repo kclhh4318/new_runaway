@@ -58,15 +58,24 @@ class AuthService {
   }
 
   Future<bool> isLoggedIn() async {
-    final accessToken = await _storageService.getString('access_token');
+    final accessToken = await _storageService.getString('accessToken');
     print('Checking if logged in. Access token exists: ${accessToken != null}');
     return accessToken != null;
   }
 
-  Future<void> logout() async {
-    print('Logging out');
-    await _storageService.remove('access_token');
-    await _storageService.remove('refresh_token');
-    print('Tokens removed');
+  Future<bool> logout() async {
+    try {
+      final result = await _apiService.logout();
+      if (result) {
+        await _tokenService.clearTokens();
+        await _storageService.remove('userId');
+        await _storageService.remove('username');  // 사용자 이름 제거
+        return true;
+      }
+      return false;
+    } catch (e) {
+      logger.severe('Logout error: $e');
+      return false;
+    }
   }
 }

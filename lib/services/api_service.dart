@@ -321,4 +321,42 @@ class ApiService {
       return [];
     }
   }
+
+  // lib/services/api_service.dart에 추가
+
+  Future<bool> logout() async {
+    logger.info('Logging out user');
+    final accessToken = await _tokenService.getAccessToken();
+
+    if (accessToken == null) {
+      logger.warning('No access token found for logout');
+      return false;
+    }
+
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/users/logout'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $accessToken',
+        },
+      );
+
+      logger.info('Logout response status: ${response.statusCode}');
+
+      if (response.statusCode == 200) {
+        await _tokenService.clearTokens();
+        await _storageService.remove('userId');
+        logger.info('User logged out successfully');
+        return true;
+      } else {
+        logger.warning('Logout failed: ${response.body}');
+        return false;
+      }
+    } catch (e) {
+      logger.severe('Error during logout: $e');
+      return false;
+    }
+  }
+
 }
