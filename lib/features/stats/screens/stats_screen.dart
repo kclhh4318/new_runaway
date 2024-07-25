@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:http/http.dart' as http;
+import 'package:new_runaway/models/stats.dart';
 import 'package:provider/provider.dart';
 import 'package:new_runaway/config/app_config.dart';
 import 'package:new_runaway/services/api_service.dart';
@@ -38,6 +39,7 @@ class _StatsScreenState extends State<StatsScreen> {
   double _averagePace = 0;
   int _totalRuns = 0;
   double _averageDistance = 0;
+  String _userId = '';
 
   final ApiService _apiService = ApiService();
 
@@ -46,6 +48,7 @@ class _StatsScreenState extends State<StatsScreen> {
     super.initState();
     _scrollController.addListener(_scrollListener);
     _fetchStats();
+    _fetchUserId();
     _loadUserId();
   }
 
@@ -73,12 +76,37 @@ class _StatsScreenState extends State<StatsScreen> {
       final response = await _apiService.getStats(_selectedPeriod, userId);
       print('API response: $response'); // 디버깅을 위한 로깅
 
+      final statsKey = _selectedPeriod == '전체' ? 'totally' : (_selectedPeriod == '주' ? 'weekly' : (_selectedPeriod == '월' ? 'monthly' : 'yearly'));
+      if (!response.containsKey(statsKey) || response[statsKey] == null) {
+        // 통계를 사용할 수 없는 경우 기본 값을 사용합니다.
+        setState(() {
+          _totalDistance = 0;
+          _totalDuration = 0;
+          _averagePace = 0;
+          _totalRuns = 0;
+          _averageDistance = 0;
+        });
+        return;
+      }
+
+      final statsData = response[statsKey];
+      print('Stats data: $statsData'); // 디버깅을 위한 로깅
+
+      final stats = Stats.fromJson(statsData ?? {});
+      print('Parsed stats: $stats'); // 디버깅을 위한 로깅
+
       setState(() {
-        _totalDistance = response[_selectedPeriod == '전체' ? 'totally' : _selectedPeriod.toLowerCase()]['distance'];
-        _totalDuration = response[_selectedPeriod == '전체' ? 'totally' : _selectedPeriod.toLowerCase()]['duration'];
-        _averagePace = response[_selectedPeriod == '전체' ? 'totally' : _selectedPeriod.toLowerCase()]['average_pace'];
-        _totalRuns = response[_selectedPeriod == '전체' ? 'totally' : _selectedPeriod.toLowerCase()]['count'];
+        _totalDistance = stats.distance;
+        _totalDuration = stats.duration;
+        _averagePace = stats.averagePace;
+        _totalRuns = stats.count;
         _averageDistance = _totalRuns == 0 ? 0 : _totalDistance / _totalRuns;
+        print('State updated:');
+        print('_totalDistance: $_totalDistance');
+        print('_totalDuration: $_totalDuration');
+        print('_averagePace: _averagePace');
+        print('_totalRuns: _totalRuns');
+        print('_averageDistance: _averageDistance');
       });
     } catch (e) {
       // 에러 핸들링
@@ -86,20 +114,11 @@ class _StatsScreenState extends State<StatsScreen> {
     }
   }
 
-  Future<Map<String, int>> _fetchCourseStatistics(String userId) async {
-    final drawCourseCountResponse = await http.get(Uri.parse('${AppConfig.apiBaseUrl}/courses/count/$userId/0'));
-    final recommendedCourseCountResponse = await http.get(Uri.parse('${AppConfig.apiBaseUrl}/courses/count/$userId/1'));
-
-    if (drawCourseCountResponse.statusCode == 200 && recommendedCourseCountResponse.statusCode == 200) {
-      final drawCourseCount = int.parse(drawCourseCountResponse.body);
-      final recommendedCourseCount = int.parse(recommendedCourseCountResponse.body);
-      return {
-        'drawCourseCount': drawCourseCount,
-        'recommendedCourseCount': recommendedCourseCount,
-      };
-    } else {
-      throw Exception('Failed to load course statistics');
-    }
+  Future<void> _fetchUserId() async {
+    final userId = await _storageService.getUserId();
+    setState(() {
+      _userId = userId ?? '';
+    });
   }
 
   @override
@@ -134,28 +153,41 @@ class _StatsScreenState extends State<StatsScreen> {
           backgroundColor: Colors.white,
           body: Stack(
             children: [
-              CustomScrollView(
-                controller: _scrollController,
-                slivers: [
-                  SliverToBoxAdapter(child: _buildTotalStats()),
-                  SliverToBoxAdapter(
-                    child: PeriodSelector(
-                      initialPeriod: _selectedPeriod,
-                      onPeriodSelected: (period) {
-                        setState(() {
-                          _selectedPeriod = period;
-                          _fetchStats(); // 새로운 기간 선택 시 데이터 가져오기
-                        });
-                      },
+              SafeArea(
+                child: CustomScrollView(
+                  controller: _scrollController,
+                  slivers: [
+                    SliverToBoxAdapter(child: _buildTotalStats()),
+                    SliverToBoxAdapter(
+                      child: PeriodSelector(
+                        initialPeriod: _selectedPeriod,
+                        onPeriodSelected: (period) {
+                          setState(() {
+                            _selectedPeriod = period;
+                            print('Selected period: $_selectedPeriod');
+                            _fetchStats();
+                          });
+                        },
+                      ),
                     ),
-                  ),
-                  if (_selectedPeriod != '전체' && _selectedPeriod != '주')
-                    SliverToBoxAdapter(child: _buildDateFilter()),
-                  SliverToBoxAdapter(child: _buildStatsChart()),
-                  SliverToBoxAdapter(child: _buildCourseStatistics()),
-                  SliverToBoxAdapter(child: _buildRecentRuns(context, apiService)),
-                  SliverToBoxAdapter(child: _buildMyDrawnCourses()),
-                ],
+                    if (_selectedPeriod != '전체' && _selectedPeriod != '주')
+                      SliverToBoxAdapter(child: _buildDateFilter()),
+                    SliverToBoxAdapter(
+                      child: Container(
+                        height: 200,
+                        padding: EdgeInsets.all(16),
+                        child: StatsBarChart(
+                          selectedPeriod: _selectedPeriod,
+                          selectedDate: _selectedDate,
+                          userId: _userId,
+                        ),
+                      ),
+                    ),
+                    SliverToBoxAdapter(child: _buildCourseStatistics()),
+                    SliverToBoxAdapter(child: _buildRecentRuns(context, apiService)),
+                    SliverToBoxAdapter(child: _buildMyDrawnCourses()),
+                  ],
+                ),
               ),
               _buildRunningButtons(),
             ],
@@ -304,6 +336,7 @@ class _StatsScreenState extends State<StatsScreen> {
       child: StatsBarChart(
         selectedPeriod: _selectedPeriod,
         selectedDate: _selectedDate,
+        userId: _userId,
       ),
     );
   }
@@ -712,8 +745,26 @@ class _StatsScreenState extends State<StatsScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        Text('최근 러닝', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+        SizedBox(height: 10),
         Text('Error: $error'),
       ],
     );
+  }
+
+  Future<Map<String, int>> _fetchCourseStatistics(String userId) async {
+    final drawCourseCountResponse = await http.get(Uri.parse('${AppConfig.apiBaseUrl}/courses/count/$userId/0'));
+    final recommendedCourseCountResponse = await http.get(Uri.parse('${AppConfig.apiBaseUrl}/courses/count/$userId/1'));
+
+    if (drawCourseCountResponse.statusCode == 200 && recommendedCourseCountResponse.statusCode == 200) {
+      final drawCourseCount = int.parse(drawCourseCountResponse.body);
+      final recommendedCourseCount = int.parse(recommendedCourseCountResponse.body);
+      return {
+        'drawCourseCount': drawCourseCount,
+        'recommendedCourseCount': recommendedCourseCount,
+      };
+    } else {
+      throw Exception('Failed to load course statistics');
+    }
   }
 }

@@ -1,31 +1,31 @@
 class Stats {
-  final double totalDistance;
-  final int totalDuration;
+  final double distance;
+  final int duration;
   final double averagePace;
-  final int totalRuns;
+  final int count;
 
   Stats({
-    required this.totalDistance,
-    required this.totalDuration,
+    required this.distance,
+    required this.duration,
     required this.averagePace,
-    required this.totalRuns,
+    required this.count,
   });
 
   factory Stats.fromJson(Map<String, dynamic> json) {
     return Stats(
-      totalDistance: json['totalDistance'].toDouble(),
-      totalDuration: json['totalDuration'],
-      averagePace: json['averagePace'].toDouble(),
-      totalRuns: json['totalRuns'],
+      distance: (json['distance'] ?? 0).toDouble(),
+      duration: json['duration'] ?? 0,
+      averagePace: (json['average_pace'] ?? 0).toDouble(),
+      count: json['count'] ?? 0,
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
-      'totalDistance': totalDistance,
-      'totalDuration': totalDuration,
-      'averagePace': averagePace,
-      'totalRuns': totalRuns,
+      'distance': distance,
+      'duration': duration,
+      'average_pace': averagePace,
+      'count': count,
     };
   }
 }

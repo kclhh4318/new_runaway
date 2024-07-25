@@ -1,101 +1,167 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:new_runaway/config/app_config.dart';
 
-class StatsBarChart extends StatelessWidget {
+class StatsBarChart extends StatefulWidget {
   final String selectedPeriod;
   final DateTime selectedDate;
+  final String userId;
 
   const StatsBarChart({
     Key? key,
     required this.selectedPeriod,
     required this.selectedDate,
+    required this.userId,
   }) : super(key: key);
 
   @override
-  Widget build(BuildContext context) {
-    final data = _getDummyData();
-    final maxY = data.reduce((a, b) => a > b ? a : b);
-    final interval = _calculateInterval(maxY);
+  _StatsBarChartState createState() => _StatsBarChartState();
+}
 
-    return BarChart(
-      BarChartData(
-        alignment: BarChartAlignment.spaceAround,
-        maxY: maxY + interval,
-        barTouchData: BarTouchData(
-          touchTooltipData: BarTouchTooltipData(
-            tooltipBgColor: Colors.blueAccent,
-            getTooltipItem: (group, groupIndex, rod, rodIndex) {
-              return BarTooltipItem(
-                '${rod.toY.round()} km',
-                const TextStyle(color: Colors.white),
-              );
-            },
-          ),
-        ),
-        titlesData: FlTitlesData(
-          bottomTitles: AxisTitles(
-            sideTitles: SideTitles(
-              showTitles: true,
-              getTitlesWidget: (double value, TitleMeta meta) {
-                return Padding(
-                  padding: const EdgeInsets.only(top: 8.0),
-                  child: Text(
-                    _getBottomTitles(value),
-                    style: const TextStyle(
-                      color: Colors.black,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 10,
-                    ),
-                  ),
+class _StatsBarChartState extends State<StatsBarChart> {
+  List<double> _data = [];
+  List<String> _labels = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchData();
+  }
+
+  Future<void> _fetchData() async {
+    final String endpoint = _getEndpoint(widget.selectedPeriod);
+    final String url = '${AppConfig.apiBaseUrl}/stats/$endpoint/${widget.userId}';
+    print('graph Fetching data from URL: $url'); // 디버깅용
+
+    try {
+      final response = await http.get(Uri.parse(url));
+      print('graph Response status: ${response.statusCode}'); // 디버깅용
+
+      if (response.statusCode == 200) {
+        final result = json.decode(response.body);
+        print('graph API Response: $result'); // 디버깅용
+
+        setState(() {
+          _labels = List<String>.from(result['x'].map((e) => e.toString()));
+          _data = List<double>.from(result['y'].map((e) => e.toDouble()));
+          print('_labels: $_labels'); // 디버깅용
+          print('_data: $_data'); // 디버깅용
+          _isLoading = false;
+        });
+      } else {
+        throw Exception('Failed to load data');
+      }
+    } catch (e) {
+      print('Error fetching data: $e');
+    }
+  }
+
+  String _getEndpoint(String period) {
+    switch (period) {
+      case '주':
+        return 'weekly_data';
+      case '월':
+        return 'monthly_data';
+      case '년':
+        return 'yearly_data';
+      case '전체':
+        return 'all_time_data';
+      default:
+        return 'weekly_data';
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_isLoading) {
+      return Center(child: CircularProgressIndicator());
+    }
+
+    if (_data.isEmpty) {
+      return Center(child: Text('데이터가 없습니다.'));
+    }
+
+    final double maxY = _data.isNotEmpty ? _data.reduce((a, b) => a > b ? a : b) : 0;
+    final double interval = _calculateInterval(maxY);
+
+    return Container(
+      height: 300,
+      child: BarChart(
+        BarChartData(
+          alignment: BarChartAlignment.spaceAround,
+          maxY: maxY + interval,
+          barTouchData: BarTouchData(
+            touchTooltipData: BarTouchTooltipData(
+              tooltipBgColor: Colors.blueAccent,
+              getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                return BarTooltipItem(
+                  '${rod.toY.round()} km',
+                  const TextStyle(color: Colors.white),
                 );
               },
-              reservedSize: 30,
             ),
           ),
-          leftTitles: AxisTitles(
-            sideTitles: SideTitles(
-              showTitles: true,
-              getTitlesWidget: (value, meta) {
-                if (value % interval == 0) {
-                  return Text(
-                    '${value.toInt()}km',
-                    style: TextStyle(fontSize: 8),
-                  );
-                }
-                return Text('');
-              },
-              reservedSize: 30,
-              interval: interval,
+          titlesData: FlTitlesData(
+            bottomTitles: AxisTitles(
+              sideTitles: SideTitles(
+                showTitles: true,
+                getTitlesWidget: (double value, TitleMeta meta) {
+                  final intValue = value.toInt();
+                  if (widget.selectedPeriod == '월' && intValue != 0 && intValue != 9 && intValue != 19) {
+                    return SizedBox.shrink(); // 빈 공간 반환
+                  }
+                  if (intValue < _labels.length) {
+                    return Padding(
+                      padding: const EdgeInsets.only(top: 8.0),
+                      child: Text(
+                        _labels[intValue],
+                        style: const TextStyle(
+                          color: Colors.black,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 10,
+                        ),
+                      ),
+                    );
+                  } else {
+                    return Text('');
+                  }
+                },
+                reservedSize: 30,
+              ),
             ),
+            leftTitles: AxisTitles(
+              sideTitles: SideTitles(
+                showTitles: true,
+                getTitlesWidget: (value, meta) {
+                  if (value % interval == 0) {
+                    return Text(
+                      '${value.toInt()}km',
+                      style: TextStyle(fontSize: 8),
+                    );
+                  }
+                  return Text('');
+                },
+                reservedSize: 30,
+                interval: interval,
+              ),
+            ),
+            topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+            rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
           ),
-          topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-        ),
-        borderData: FlBorderData(show: false),
-        barGroups: _getBarGroups(data),
-        gridData: FlGridData(
-          show: true,
-          drawHorizontalLine: true,
-          horizontalInterval: interval,
-          drawVerticalLine: false,
+          borderData: FlBorderData(show: false),
+          barGroups: _getBarGroups(_data),
+          gridData: FlGridData(
+            show: true,
+            drawHorizontalLine: true,
+            horizontalInterval: interval,
+            drawVerticalLine: false,
+          ),
         ),
       ),
     );
-  }
-
-  List<double> _getDummyData() {
-    switch (selectedPeriod) {
-      case '주':
-        return [10, 15, 30, 25, 40, 35, 20];
-      case '월':
-        return List.generate(31, (index) => (index % 2 == 0) ? 20.0 + index : 0);
-      case '년':
-        return [10, 150, 30, 80, 60, 70, 90, 100, 110, 120, 130, 140];
-      case '전체':
-        return [100, 200, 150, 300];
-      default:
-        return [];
-    }
   }
 
   List<BarChartGroupData> _getBarGroups(List<double> data) {
@@ -120,27 +186,5 @@ class StatsBarChart extends StatelessWidget {
     if (maxY <= 200) return 50;
     return 100;
   }
-
-  String _getBottomTitles(double value) {
-    final intValue = value.toInt();
-    switch (selectedPeriod) {
-      case '주':
-        return ['일', '월', '화', '수', '목', '금', '토'][intValue];
-      case '월':
-        if (intValue % 7 == 0) {
-          return '${intValue + 1}일';
-        }
-        return '';
-      case '년':
-        return ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월'][intValue];
-      case '전체':
-        final years = [2021, 2022, 2023, 2024];
-        if (intValue < years.length) {
-          return years[years.length - 1 - intValue].toString();
-        }
-        return '';
-      default:
-        return '';
-    }
-  }
 }
+
