@@ -28,7 +28,13 @@ class _StatsBarChartState extends State<StatsBarChart> {
   @override
   void initState() {
     super.initState();
-    _fetchData();
+    if (widget.userId.isNotEmpty) {
+      _fetchData();
+    } else {
+      setState(() {
+        _isLoading = false;
+      });
+    }
   }
 
   Future<void> _fetchData() async {
