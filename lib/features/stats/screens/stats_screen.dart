@@ -47,9 +47,9 @@ class _StatsScreenState extends State<StatsScreen> {
   void initState() {
     super.initState();
     _scrollController.addListener(_scrollListener);
-    _fetchStats();
     _fetchUserId();
     _loadUserId();
+    _fetchStats();
   }
 
   Future<void> _loadUserId() async {
@@ -172,20 +172,10 @@ class _StatsScreenState extends State<StatsScreen> {
                     ),
                     if (_selectedPeriod != '전체' && _selectedPeriod != '주')
                       SliverToBoxAdapter(child: _buildDateFilter()),
-                    SliverToBoxAdapter(
-                      child: Container(
-                        height: 200,
-                        padding: EdgeInsets.all(16),
-                        child: StatsBarChart(
-                          selectedPeriod: _selectedPeriod,
-                          selectedDate: _selectedDate,
-                          userId: _userId,
-                        ),
-                      ),
-                    ),
-                    SliverToBoxAdapter(child: _buildCourseStatistics()),
-                    SliverToBoxAdapter(child: _buildRecentRuns(context, apiService)),
-                    SliverToBoxAdapter(child: _buildMyDrawnCourses()),
+                      SliverToBoxAdapter(child: _buildStatsChart()),
+                      SliverToBoxAdapter(child: _buildCourseStatistics()),
+                      SliverToBoxAdapter(child: _buildRecentRuns(context, apiService)),
+                      SliverToBoxAdapter(child: _buildMyDrawnCourses()),
                   ],
                 ),
               ),
@@ -330,6 +320,11 @@ class _StatsScreenState extends State<StatsScreen> {
   }
 
   Widget _buildStatsChart() {
+    // userId가 설정된 후에만 StatsBarChart를 생성
+    if (_userId.isEmpty) {
+      return Center(child: CircularProgressIndicator());
+    }
+
     return Container(
       height: 200,
       padding: EdgeInsets.all(16),
