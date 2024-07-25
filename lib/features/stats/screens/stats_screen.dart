@@ -1,22 +1,22 @@
+import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import 'package:new_runaway/config/app_config.dart';
 import 'package:new_runaway/services/api_service.dart';
+import 'package:new_runaway/services/token_service.dart';
 import 'package:new_runaway/services/storage_service.dart';
+import 'package:new_runaway/utils/logger.dart';
 import 'package:new_runaway/features/courses/screens/course_drawing_screen.dart';
 import 'package:new_runaway/features/running/screens/running_session_screen.dart';
 import 'package:new_runaway/features/stats/widgets/period_selector.dart';
 import 'package:new_runaway/features/stats/widgets/stats_bar_chart.dart';
 import 'package:new_runaway/features/running/running_provider.dart';
 import 'package:new_runaway/models/running_session.dart';
-import 'package:new_runaway/widgets/course_painter.dart';
-import '../../../models/course.dart';
-import '../../../services/auth_service.dart';
-import '../../../utils/logger.dart';
-import '../../onboarding/screens/start_page.dart';
+
 import 'all_runs_screen.dart';
+
 class StatsScreen extends StatefulWidget {
   const StatsScreen({Key? key}) : super(key: key);
 
@@ -29,9 +29,6 @@ class _StatsScreenState extends State<StatsScreen> {
   bool _showRunningButtons = true;
   String _selectedPeriod = '전체';
   DateTime _selectedDate = DateTime.now();
-  final StorageService _storageService = StorageService();
-  String? userId;
-  String _username = '';
 
   double _totalDistance = 0;
   int _totalDuration = 0;
@@ -40,20 +37,13 @@ class _StatsScreenState extends State<StatsScreen> {
   double _averageDistance = 0;
 
   final ApiService _apiService = ApiService();
+  final StorageService _storageService = StorageService();
 
   @override
   void initState() {
     super.initState();
     _scrollController.addListener(_scrollListener);
     _fetchStats();
-    _loadUserId();
-  }
-
-  Future<void> _loadUserId() async {
-    final id = await _storageService.getUserId();
-    setState(() {
-      userId = id;
-    });
   }
 
   void _scrollListener() {
@@ -71,8 +61,6 @@ class _StatsScreenState extends State<StatsScreen> {
         throw Exception('User ID not found');
       }
       final response = await _apiService.getStats(_selectedPeriod, userId);
-      print('API response: $response'); // 디버깅을 위한 로깅
-
       setState(() {
         _totalDistance = response[_selectedPeriod == '전체' ? 'totally' : _selectedPeriod.toLowerCase()]['distance'];
         _totalDuration = response[_selectedPeriod == '전체' ? 'totally' : _selectedPeriod.toLowerCase()]['duration'];
@@ -81,7 +69,6 @@ class _StatsScreenState extends State<StatsScreen> {
         _averageDistance = _totalRuns == 0 ? 0 : _totalDistance / _totalRuns;
       });
     } catch (e) {
-      // 에러 핸들링
       print('통계 정보를 가져오지 못했습니다: $e');
     }
   }
@@ -107,55 +94,33 @@ class _StatsScreenState extends State<StatsScreen> {
     return Consumer<ApiService>(
       builder: (context, apiService, child) {
         return Scaffold(
-          appBar: AppBar(
-            title: Text('통계'),
-            backgroundColor: Colors.white,
-            foregroundColor: Colors.black,
-            actions: [
-              PopupMenuButton<String>(
-                onSelected: (value) async {
-                  if (value == 'logout') {
-                    await _logout();
-                  }
-                },
-                itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-                  PopupMenuItem<String>(
-                    value: 'profile',
-                    child: Text('프로필: $_username'),
-                  ),
-                  PopupMenuItem<String>(
-                    value: 'logout',
-                    child: Text('로그아웃'),
-                  ),
-                ],
-              ),
-            ],
-          ),
           backgroundColor: Colors.white,
           body: Stack(
             children: [
-              CustomScrollView(
-                controller: _scrollController,
-                slivers: [
-                  SliverToBoxAdapter(child: _buildTotalStats()),
-                  SliverToBoxAdapter(
-                    child: PeriodSelector(
-                      initialPeriod: _selectedPeriod,
-                      onPeriodSelected: (period) {
-                        setState(() {
-                          _selectedPeriod = period;
-                          _fetchStats(); // 새로운 기간 선택 시 데이터 가져오기
-                        });
-                      },
+              SafeArea(
+                child: CustomScrollView(
+                  controller: _scrollController,
+                  slivers: [
+                    SliverToBoxAdapter(child: _buildTotalStats()),
+                    SliverToBoxAdapter(
+                      child: PeriodSelector(
+                        initialPeriod: _selectedPeriod,
+                        onPeriodSelected: (period) {
+                          setState(() {
+                            _selectedPeriod = period;
+                            _fetchStats();
+                          });
+                        },
+                      ),
                     ),
-                  ),
-                  if (_selectedPeriod != '전체' && _selectedPeriod != '주')
-                    SliverToBoxAdapter(child: _buildDateFilter()),
-                  SliverToBoxAdapter(child: _buildStatsChart()),
-                  SliverToBoxAdapter(child: _buildCourseStatistics()),
-                  SliverToBoxAdapter(child: _buildRecentRuns(context, apiService)),
-                  SliverToBoxAdapter(child: _buildMyDrawnCourses()),
-                ],
+                    if (_selectedPeriod != '전체' && _selectedPeriod != '주')
+                      SliverToBoxAdapter(child: _buildDateFilter()),
+                    SliverToBoxAdapter(child: _buildStatsChart()),
+                    SliverToBoxAdapter(child: _buildCourseStatistics()),
+                    SliverToBoxAdapter(child: _buildRecentRuns(context, apiService)),
+                    SliverToBoxAdapter(child: _buildMyDrawnCourses()),
+                  ],
+                ),
               ),
               _buildRunningButtons(),
             ],
@@ -349,15 +314,6 @@ class _StatsScreenState extends State<StatsScreen> {
     );
   }
 
-  Future<void> _logout() async {
-    final authService = Provider.of<AuthService>(context, listen: false);
-    await authService.logout();
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (context) => StartPage()),
-          (Route<dynamic> route) => false,
-    );
-  }
-
   Widget _buildCourseStatItem(String label, String value) {
     return Column(
       children: [
@@ -393,9 +349,31 @@ class _StatsScreenState extends State<StatsScreen> {
               ),
               SizedBox(height: 10),
               if (!userIdSnapshot.hasData || userIdSnapshot.data == null)
-                _buildEmptyRecentRuns()
+                Text('최근 러닝 기록이 없습니다.')
               else
-                _buildRecentRunsList(context, apiService, userIdSnapshot.data!),
+                FutureBuilder<List<RunningSession>>(
+                  future: apiService.getRecentRuns(userIdSnapshot.data!),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return CircularProgressIndicator();
+                    } else if (snapshot.hasError) {
+                      return Text('Error: ${snapshot.error}');
+                    } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                      return Text('최근 러닝 기록이 없습니다.');
+                    } else {
+                      return Column(
+                        children: snapshot.data!.take(3).map((run) => _buildRecentRunItem(
+                          run.date.toString().substring(0, 10),
+                          '${run.distance.toStringAsFixed(2)} km',
+                          _formatDuration(run.duration),
+                          _formatPace(run.averagePace),
+                          run.strength,
+                          run.imagePath,
+                        )).toList(),
+                      );
+                    }
+                  },
+                ),
             ],
           );
         },
@@ -403,50 +381,34 @@ class _StatsScreenState extends State<StatsScreen> {
     );
   }
 
-  Widget _buildEmptyRecentRuns() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SizedBox(height: 10),
-        Text('최근 러닝 기록이 없습니다.'),
-      ],
-    );
-  }
+  Widget _buildRecentRunItem(String date, String distance, String time, String pace, int strength, String? imagePath) {
+    String badgeImage;
+    if (strength >= 1 && strength <= 3) {
+      badgeImage = 'assets/images/strength1-3.png';
+    } else if (strength >= 4 && strength <= 6) {
+      badgeImage = 'assets/images/strength4-6.png';
+    } else if (strength >= 7 && strength <= 9) {
+      badgeImage = 'assets/images/strength7-9.png';
+    } else if (strength == 10) {
+      badgeImage = 'assets/images/strength10.png';
+    } else {
+      badgeImage = ''; // 기본값을 설정하거나 필요에 따라 다르게 처리
+    }
 
-  Widget _buildRecentRunsList(BuildContext context, ApiService apiService, String userId) {
-    return FutureBuilder<List<RunningSession>>(
-      future: apiService.getRecentRuns(userId),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return _buildLoadingRecentRuns();
-        } else if (snapshot.hasError) {
-          return _buildErrorRecentRuns(snapshot.error.toString());
-        } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-          return _buildEmptyRecentRuns();
-        } else {
-          return Column(
-            children: snapshot.data!.take(3).map((run) => _buildRecentRunItem(run)).toList(),
-          );
-        }
-      },
-    );
-  }
-
-  Widget _buildRecentRunItem(RunningSession run) {
     return Container(
-    margin: EdgeInsets.only(bottom: 10),
-    padding: EdgeInsets.all(10),
-    decoration: BoxDecoration(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(15),
-      boxShadow: const [
-        BoxShadow(
-          color: Colors.black26,
-          blurRadius: 10,
-          offset: Offset(0, 4),
-        ),
-      ],
-    ),
+      margin: EdgeInsets.only(bottom: 10),
+      padding: EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(15),
+        boxShadow: const [
+          BoxShadow(
+            color: Colors.black26,
+            blurRadius: 10,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
       child: Stack(
         children: [
           Row(
@@ -454,11 +416,8 @@ class _StatsScreenState extends State<StatsScreen> {
               Container(
                 width: 100,
                 height: 100,
-                child: run.route != null && run.route!.isNotEmpty
-                    ? CustomPaint(
-                  painter: CoursePainter(run.route!),
-                  size: Size(100, 100),
-                )
+                child: imagePath != null
+                    ? Image.file(File(imagePath), fit: BoxFit.cover)
                     : Container(color: Colors.grey[300]),
               ),
               SizedBox(width: 10),
@@ -466,11 +425,11 @@ class _StatsScreenState extends State<StatsScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(run.date.toString().split(' ')[0], style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
+                    Text(date, style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
                     SizedBox(height: 5),
                     Text('총 킬로미터', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                     Text(
-                      '${run.distance.toStringAsFixed(2)} km',
+                      distance,
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 19,
@@ -486,14 +445,14 @@ class _StatsScreenState extends State<StatsScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text('시간', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                            Text(_formatDuration(run.duration), style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, height: 1.2,))
+                            Text(time, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, height: 1.2))
                           ],
                         ),
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text('평균 페이스', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                            Text(_formatPace(run.averagePace), style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, height: 1.2)),
+                            Text(pace, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, height: 1.2)),
                           ],
                         ),
                         SizedBox(width: 13),
@@ -508,7 +467,7 @@ class _StatsScreenState extends State<StatsScreen> {
             top: 0,
             right: 0,
             child: Image.asset(
-              _getStrengthBadgeImage(run.strength),
+              badgeImage,
               width: 45,
               height: 45,
             ),
@@ -526,39 +485,18 @@ class _StatsScreenState extends State<StatsScreen> {
         children: [
           Text('내가 그린 코스', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           SizedBox(height: 10),
-          FutureBuilder<List<Course>>(
-            future: _apiService.getMyDrawnCourses(userId ?? ''),
-            builder: (context, snapshot) {
-              logger.info('Fetching drawn courses for user ID: $userId');
-
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return Center(child: CircularProgressIndicator());
-              } else if (snapshot.hasError) {
-                logger.severe('Error fetching drawn courses: ${snapshot.error}');
-                return Text('에러가 발생했습니다: ${snapshot.error}');
-              } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                logger.info('No drawn courses found for user ID: $userId');
-                return Text('아직 그린 코스가 없습니다.');
-              } else {
-                logger.info('Fetched ${snapshot.data!.length} drawn courses for user ID: $userId');
-                logger.info('Course IDs: ${snapshot.data!.map((c) => c.id).join(", ")}');
-                return SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: snapshot.data!.map((course) => _buildCourseItem(course)).toList(),
-                  ),
-                );
-              }
-            },
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: List.generate(5, (index) => _buildCourseItem(index)),
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildCourseItem(Course course) {
-    List<LatLng> points = _convertToLatLngList(course.routeCoordinate);
-
+  Widget _buildCourseItem(int index) {
     return Padding(
       padding: const EdgeInsets.only(right: 10.0),
       child: Column(
@@ -567,20 +505,13 @@ class _StatsScreenState extends State<StatsScreen> {
             width: 100,
             height: 100,
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: Colors.grey[300],
               borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: Colors.blue),
             ),
-            child: points.isNotEmpty
-                ? CustomPaint(
-              painter: CoursePainter(points),
-              size: Size(100, 100),
-            )
-                : Center(child: Text('No route')),
           ),
           SizedBox(height: 5),
           Text(
-            '${course.recommendationCount ?? 0}명',
+            '1111명',
             style: TextStyle(
               fontSize: 10,
               fontWeight: FontWeight.normal,
@@ -669,51 +600,5 @@ class _StatsScreenState extends State<StatsScreen> {
     final minutes = paceInSeconds ~/ 60;
     final seconds = (paceInSeconds % 60).toInt();
     return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
-  }
-
-  Widget _buildLoadingRecentRuns() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Center(child: CircularProgressIndicator()),
-      ],
-    );
-  }
-
-  String _getStrengthBadgeImage(int strength) {
-    if (strength >= 1 && strength <= 3) {
-      return 'assets/images/strength1-3.png';
-    } else if (strength >= 4 && strength <= 6) {
-      return 'assets/images/strength4-6.png';
-    } else if (strength >= 7 && strength <= 9) {
-      return 'assets/images/strength7-9.png';
-    } else if (strength == 10) {
-      return 'assets/images/strength10.png';
-    } else {
-      return 'assets/images/default_strength.png';
-    }
-  }
-
-  List<LatLng> _convertToLatLngList(Map<String, dynamic>? routeCoordinate) {
-    if (routeCoordinate == null || !routeCoordinate.containsKey('coordinates')) {
-      return [];
-    }
-
-    List<dynamic> coordinates = routeCoordinate['coordinates'];
-    return coordinates.map((point) {
-      if (point is List && point.length >= 2) {
-        return LatLng(point[1], point[0]);
-      }
-      return LatLng(0, 0);
-    }).toList();
-  }
-
-  Widget _buildErrorRecentRuns(String error) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('Error: $error'),
-      ],
-    );
   }
 }

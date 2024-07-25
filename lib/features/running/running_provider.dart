@@ -58,8 +58,16 @@ class RunningProvider with ChangeNotifier {
 
       _predefinedCourse = predefinedCourse;
       _isRunning = true;
+      _seconds = 0;
+      _distance = 0.0;
+      _avgPace = 0.0;
+      _currentPace = 0.0;
+      _routePoints = [];
+
+      // 타이머와 위치 추적을 동시에 시작
       _startTimer();
       _startLocationTracking();
+
       notifyListeners();
     } catch (e) {
       logger.severe('Error starting running session: $e');
@@ -99,7 +107,7 @@ class RunningProvider with ChangeNotifier {
       "avgPace": _avgPace,
       "currentPace": _currentPace,
       "route": _routePoints,
-      "courseId": _courseId,  // courseId 추가
+      "courseId": _courseId,
     };
 
     logger.info('Stopping running session. Data prepared for result screen: $sessionData');
