@@ -12,81 +12,83 @@ import 'package:new_runaway/features/running/screens/running_session_screen.dart
 import 'package:new_runaway/features/running/running_provider.dart';
 import '../../../models/recommended_course.dart';
 
-class CourseAnalysisResultScreen extends StatelessWidget {
+class CourseAnalysisResultScreen extends StatefulWidget {
+  final RecommendedCourse initialCourse;
+
+  CourseAnalysisResultScreen({required this.initialCourse});
+
+  @override
+  _CourseAnalysisResultScreenState createState() => _CourseAnalysisResultScreenState();
+}
+
+class _CourseAnalysisResultScreenState extends State<CourseAnalysisResultScreen> {
   final logger = Logger('CourseAnalysisResultScreen');
   final GlobalKey _globalKey = GlobalKey();
-  final RecommendedCourse course; // 수정된 부분
+  late RecommendedCourse _currentCourse;
 
-  CourseAnalysisResultScreen({required this.course}); // 수정된 부분
+  @override
+  void initState() {
+    super.initState();
+    _currentCourse = widget.initialCourse;
+  }
 
   @override
   Widget build(BuildContext context) {
     final courseProvider = Provider.of<CourseProvider>(context);
-    // 여기서 recommendedCourse 사용 대신 course 사용
-    final recommendedCourse = course;
 
     return Scaffold(
       appBar: AppBar(title: Text('코스 분석 결과'), backgroundColor: Colors.white,),
       body: Column(
         children: [
           Expanded(
-            child: recommendedCourse != null
-                ? RepaintBoundary(
+            child: RepaintBoundary(
               key: _globalKey,
               child: GoogleMap(
                 initialCameraPosition: CameraPosition(
-                  target: _calculateCenter(recommendedCourse.points),
+                  target: _calculateCenter(_currentCourse.points),
                   zoom: 14.0,
                 ),
                 polylines: {
                   Polyline(
                     polylineId: PolylineId('recommended_course'),
-                    points: recommendedCourse.points,
+                    points: _currentCourse.points,
                     color: Colors.blue,
                     width: 5,
                   ),
                 },
                 onMapCreated: (GoogleMapController controller) {
-                  _fitBounds(controller, recommendedCourse.points);
+                  _fitBounds(controller, _currentCourse.points);
                 },
               ),
-            )
-                : Center(child: CircularProgressIndicator()),
+            ),
           ),
           Container(
-            color: Colors.white, // 배경색 설정
+            color: Colors.white,
             padding: const EdgeInsets.all(16.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('총 거리: ${recommendedCourse.distance.toStringAsFixed(2)} km',
+                Text('총 거리: ${_currentCourse.distance.toStringAsFixed(2)} km',
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                 SizedBox(height: 8),
-                Text('코스 설명: ${recommendedCourse.description.split('.').first}',
+                Text('코스 설명: ${_currentCourse.description.split('.').first}',
                     style: TextStyle(fontSize: 16)),
                 SizedBox(height: 8),
-                Text('안전 팁: ${recommendedCourse.safetyTips.isNotEmpty ? recommendedCourse.safetyTips.first : ""}',
+                Text('안전 팁: ${_currentCourse.safetyTips.isNotEmpty ? _currentCourse.safetyTips.first : ""}',
                     style: TextStyle(fontSize: 16)),
                 SizedBox(height: 16),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
                     ElevatedButton(
-                      onPressed: recommendedCourse != null
-                          ? () => _showCountdownAndStartRunning(context, recommendedCourse.points)
-                          : null,
+                      onPressed: () => _showCountdownAndStartRunning(context, _currentCourse.points),
                       child: Text('RUN!'),
                     ),
                     ElevatedButton(
                       style: ElevatedButton.styleFrom(
                         foregroundColor: Colors.white, backgroundColor: Color(0xFF0064FF),
                       ),
-                      onPressed: () async {
-                        await courseProvider.reanalyze();
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('코스가 재분석되었습니다.')),
-                        );
-                      },
+                      onPressed: () => _reanalyzeCourse(context, courseProvider),
                       child: Text('재분석'),
                     ),
                   ],
@@ -97,6 +99,43 @@ class CourseAnalysisResultScreen extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  Future<void> _reanalyzeCourse(BuildContext context, CourseProvider courseProvider) async {
+    try {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            content: Row(
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(width: 20),
+                Text("코스를 재분석 중이다모..."),
+              ],
+            ),
+          );
+        },
+      );
+
+      await courseProvider.reanalyze(_currentCourse.points);
+      Navigator.of(context).pop(); // 로딩 다이얼로그 닫기
+
+      setState(() {
+        _currentCourse = courseProvider.recommendedCourse!;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('코스가 재분석되었습니다.')),
+      );
+    } catch (e) {
+      Navigator.of(context).pop(); // 로딩 다이얼로그 닫기
+      logger.severe('Failed to reanalyze course: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('코스 재분석에 실패했습니다: $e')),
+      );
+    }
   }
 
   LatLng _calculateCenter(List<LatLng> points) {

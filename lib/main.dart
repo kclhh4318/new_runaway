@@ -91,7 +91,7 @@ class MyApp extends StatelessWidget {
         ),
         routes: {
           '/course_analysis_result': (context) => CourseAnalysisResultScreen(
-            course: ModalRoute.of(context)!.settings.arguments as RecommendedCourse, // 수정된 부분
+            initialCourse: ModalRoute.of(context)!.settings.arguments as RecommendedCourse,
           ),
           '/all_runs': (context) => AllRunsScreen(),
         },

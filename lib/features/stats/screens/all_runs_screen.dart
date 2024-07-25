@@ -73,7 +73,7 @@ class _AllRunsScreenState extends State<AllRunsScreen> {
                     SizedBox(height: 5),
                     Text('총 킬로미터', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                     Text(
-                      '${run.distance.toStringAsFixed(2)} km',
+                      '${run.distance.toStringAsFixed(2)}',
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 19,

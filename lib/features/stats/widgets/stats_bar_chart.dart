@@ -98,7 +98,7 @@ class _StatsBarChartState extends State<StatsBarChart> {
               tooltipBgColor: Colors.blueAccent,
               getTooltipItem: (group, groupIndex, rod, rodIndex) {
                 return BarTooltipItem(
-                  '${rod.toY.round()} km',
+                  '${rod.toY.round()}',
                   const TextStyle(color: Colors.white),
                 );
               },

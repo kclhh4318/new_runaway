@@ -159,7 +159,7 @@ class _StatsScreenState extends State<StatsScreen> {
         children: [
           Text('총 킬로미터', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
           Text(
-            '${_statsData!.distance.toStringAsFixed(2)} km',
+            '${_statsData!.distance.toStringAsFixed(2)}',
             style: TextStyle(fontSize: 50, fontWeight: FontWeight.bold, fontFamily: 'Giants', fontStyle: FontStyle.italic),
           ),
           SizedBox(height: 16),

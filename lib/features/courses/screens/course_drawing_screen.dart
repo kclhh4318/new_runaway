@@ -98,8 +98,7 @@ class _CourseDrawingScreenState extends State<CourseDrawingScreen> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) =>
-                      CourseAnalysisResultScreen(course: course),
+                  builder: (context) => CourseAnalysisResultScreen(initialCourse: course),
                 ),
               );
             },
@@ -361,7 +360,7 @@ class _CourseDrawingScreenState extends State<CourseDrawingScreen> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => CourseAnalysisResultScreen(course: recommendedCourse),
+            builder: (context) => CourseAnalysisResultScreen(initialCourse: recommendedCourse),
           ),
         );
       }

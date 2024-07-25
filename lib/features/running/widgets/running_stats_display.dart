@@ -46,12 +46,12 @@ class RunningStatsDisplay extends StatelessWidget {
           SizedBox(height: 20),
           Text(
             _formatTime(seconds),
-            style: TextStyle(fontSize: 48, fontWeight: FontWeight.bold, color: Colors.white),
+            style: TextStyle(fontSize: 48, fontWeight: FontWeight.bold, color: Colors.black),
           ),
           SizedBox(height: 10),
           Text(
-            "${distance.toStringAsFixed(2)} km",
-            style: TextStyle(fontSize: 36, fontWeight: FontWeight.bold, color: Colors.white),
+            "${distance.toStringAsFixed(2)}",
+            style: TextStyle(fontSize: 36, fontWeight: FontWeight.bold, color: Colors.black),
           ),
         ],
       ),

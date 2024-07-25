@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 import 'dart:convert';
@@ -23,29 +22,22 @@ class CourseProvider extends ChangeNotifier {
 
   Future<void> analyzeAndRecommendCourse(List<LatLng> drawnPoints) async {
     try {
-      final refinedPoints = await _refineDrawnPoints(drawnPoints);
-      if (refinedPoints.isEmpty) {
-        throw Exception('Refined points are empty');
-      }
-
-      final pointsJson = refinedPoints.map((point) => {
+      final sampledPoints = _samplePoints(drawnPoints, 20); // 20개의 포인트로 샘플링
+      final pointsJson = sampledPoints.map((point) => {
         'latitude': point.latitude,
         'longitude': point.longitude,
       }).toList();
 
-
       final prompt = '''
-Given the following drawn course coordinates:
+Given the following sampled course coordinates:
 $pointsJson
 
-Create a running route that closely follows these coordinates while adhering to the following strict rules:
-1. Prioritize major roads with sidewalks for the route.
-2. Ensure that every point of the recommended route is on a road with a sidewalk or pedestrian path.
-3. The shape and distance of the route should be as close as possible to the original drawn course.
-4. Use proper crosswalks or pedestrian crossings when the route needs to cross streets.
-5. If a major road with a sidewalk is not available, choose the next best option that ensures runner safety.
-6. The total distance of the recommended route should be within 15% of the original drawn course length to account for potentially longer routes on major roads.
-7. Include any notable landmarks or points of interest along the major roads in the route description.
+Create a running route that follows these coordinates while adhering to the following rules:
+1. The route should follow major roads with sidewalks where possible.
+2. Ensure runner safety by avoiding dangerous areas.
+3. The shape and approximate distance of the route should be similar to the original course.
+4. Use proper crosswalks or pedestrian crossings when necessary.
+5. Include any notable landmarks or points of interest along the route.
 
 Provide your response as a JSON object with these keys:
 coordinates (list of LatLng), distance (km), description, safetyTips, pointsOfInterest
@@ -64,6 +56,18 @@ Ensure your JSON is valid and contains no additional formatting or markdown.
       _totalDistance = _calculateDistance(drawnPoints);
       notifyListeners();
     }
+  }
+
+  List<LatLng> _samplePoints(List<LatLng> points, int sampleSize) {
+    if (points.length <= sampleSize) return points;
+
+    List<LatLng> sampled = [];
+    double step = points.length / sampleSize;
+    for (int i = 0; i < sampleSize; i++) {
+      int index = (i * step).round();
+      sampled.add(points[index]);
+    }
+    return sampled;
   }
 
   RecommendedCourse _parseRecommendation(String recommendation) {
@@ -148,9 +152,13 @@ Ensure your JSON is valid and contains no additional formatting or markdown.
     notifyListeners();
   }
 
-  Future<void> reanalyze() async {
-    if (_recommendedCourse != null) {
-      await analyzeAndRecommendCourse(_recommendedCourse!.points);
+  Future<void> reanalyze(List<LatLng> points) async {
+    try {
+      await analyzeAndRecommendCourse(points);
+      notifyListeners();
+    } catch (e) {
+      print('Error reanalyzing course: $e');
+      rethrow;
     }
   }
 
