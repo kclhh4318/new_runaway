@@ -12,10 +12,8 @@ import 'package:new_runaway/services/session_service.dart';
 import 'package:new_runaway/features/stats/screens/stats_screen.dart';
 import 'package:new_runaway/utils/logger.dart';
 import 'package:new_runaway/services/api_service.dart';
-import 'package:new_runaway/models/course.dart';
 import 'features/stats/screens/all_runs_screen.dart';
-import 'package:mongo_dart/mongo_dart.dart';
-
+import 'package:new_runaway/services/auth_service.dart';
 import 'models/recommended_course.dart';
 
 void main() async {
@@ -68,6 +66,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => RunningProvider()),
         ChangeNotifierProvider(create: (_) => CourseProvider()),
         Provider<ApiService>(create: (_) => ApiService()), // 추가된 부분
+        Provider<AuthService>(create: (_) => AuthService()), // 추가된 부분
       ],
       child: MaterialApp(
         title: 'Runaway',

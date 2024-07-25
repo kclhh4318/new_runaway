@@ -8,7 +8,6 @@ import 'package:new_runaway/features/running/screens/run_result_screen.dart';
 import 'package:new_runaway/features/running/widgets/countdown_timer.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'dart:async';
-import 'package:logging/logging.dart';
 
 class RunningSessionScreen extends StatefulWidget {
   final bool showCountdown;

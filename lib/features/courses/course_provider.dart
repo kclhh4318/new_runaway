@@ -1,13 +1,14 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 import 'dart:convert';
 import 'dart:math' show pi, sin, cos, sqrt, atan2;
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:new_runaway/models/recommended_course.dart';
 import 'package:new_runaway/services/openai_service.dart';
 import 'package:new_runaway/services/api_service.dart';
-
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../../utils/logger.dart';
 
 class CourseProvider extends ChangeNotifier {
@@ -22,7 +23,8 @@ class CourseProvider extends ChangeNotifier {
 
   Future<void> analyzeAndRecommendCourse(List<LatLng> drawnPoints) async {
     try {
-      final pointsJson = drawnPoints.map((point) => {
+      final refinedPoints = await _refineDrawnPoints(drawnPoints);
+      final pointsJson = refinedPoints.map((point) => {
         'latitude': point.latitude,
         'longitude': point.longitude,
       }).toList();
@@ -31,44 +33,29 @@ class CourseProvider extends ChangeNotifier {
 Given the following drawn course coordinates:
 $pointsJson
 
-Your task is to create a realistic and safe running route based on these coordinates. However, DO NOT simply connect these points. Instead, use them as a general guide to create a route that follows actual roads and pedestrian paths. Your route should:
+Create a running route that closely follows these coordinates while adhering to the following strict rules:
+1. The route MUST follow actual roads, paths, and trails suitable for running.
+2. Every single point of the recommended route MUST be on a real, accessible path.
+3. The shape and distance of the route should be as close as possible to the original drawn course.
+4. Prioritize pedestrian-friendly areas: sidewalks, park paths, and quiet residential streets.
+5. Absolutely avoid highways, major roads without sidewalks, and any unsafe areas for pedestrians.
+6. Use proper crosswalks or pedestrian crossings when the route needs to cross streets.
+7. If the drawn line goes through obstacles (buildings, water bodies, etc.), find the nearest valid path around the obstacle.
+8. The total distance of the recommended route should be within 10% of the original drawn course length.
 
-1. Follow the general shape and direction of the drawn course, but prioritize using real roads and paths.
-2. Ensure EVERY point in your recommended route is on an actual road, sidewalk, or pedestrian path. Do not include any points that would be inside buildings or inaccessible areas.
-3. Adjust the route significantly if necessary to follow real-world infrastructure. It's okay if the final route deviates from the original drawing, as long as it maintains a similar overall shape and distance.
-4. Prioritize pedestrian-friendly areas such as sidewalks, park paths, and quiet residential streets.
-5. Avoid highways, major roads without sidewalks, and any areas unsafe for pedestrians.
-6. Use crosswalks or pedestrian crossings when the route needs to cross streets.
-7. Include parks, trails, or scenic areas if they fit naturally into the route.
-8. Try to create a circular route if possible, but prioritize safety and realism over perfect circularity.
-9. Aim for a total distance similar to what the original drawn course would be (within 20% deviation).
-10. Minimize sharp turns and complex intersections for runner safety and convenience.
-
-For your response, please provide:
-1. A list of LatLng coordinates that represent your recommended route. These should be actual points on roads or paths.
-2. The total distance of your recommended route in kilometers (to two decimal places).
-3. A detailed description of the route, highlighting how it follows actual roads and paths, and noting any significant deviations from the original drawn course.
-4. At least five specific safety tips for runners on this route.
-5. Any points of interest or landmarks that would likely be along this route.
-
-Format your response as a JSON object with the following keys:
-coordinates, distance, description, safetyTips, pointsOfInterest
+Provide your response as a JSON object with these keys:
+coordinates (list of LatLng), distance (km), description, safetyTips, pointsOfInterest
 
 Ensure your JSON is valid and contains no additional formatting or markdown.
 ''';
 
       final recommendation = await _openAIService.getRecommendedCourse(prompt);
-      print('OpenAI recommendation: $recommendation');
       _recommendedCourse = _parseRecommendation(recommendation);
       _totalDistance = _recommendedCourse!.distance;
       notifyListeners();
     } catch (e, stackTrace) {
       print('Error analyzing and recommending course: $e');
       print('Stack trace: $stackTrace');
-      if (e is Exception) {
-        print('Exception details: ${e.toString()}');
-      }
-      // OpenAI 서비스 실패 시 기본 코스 사용
       _recommendedCourse = _createDefaultCourse(drawnPoints);
       _totalDistance = _calculateDistance(drawnPoints);
       notifyListeners();
@@ -162,4 +149,28 @@ Ensure your JSON is valid and contains no additional formatting or markdown.
       await analyzeAndRecommendCourse(_recommendedCourse!.points);
     }
   }
+
+  Future<List<LatLng>> _refineDrawnPoints(List<LatLng> drawnPoints) async {
+    PolylinePoints polylinePoints = PolylinePoints();
+    List<LatLng> refinedPoints = [];
+
+    for (int i = 0; i < drawnPoints.length - 1; i += 2) {  // 격자로 처리
+      PointLatLng start = PointLatLng(drawnPoints[i].latitude, drawnPoints[i].longitude);
+      PointLatLng end = PointLatLng(drawnPoints[i + 1].latitude, drawnPoints[i + 1].longitude);
+
+      PolylineResult result = await polylinePoints.getRouteBetweenCoordinates(
+        dotenv.env['GOOGLE_MAPS_API_KEY']!,
+        start,
+        end,
+        travelMode: TravelMode.walking,
+      );
+
+      if (result.points.isNotEmpty) {
+        refinedPoints.addAll(result.points.map((point) => LatLng(point.latitude, point.longitude)));
+      }
+    }
+
+    return refinedPoints;
+  }
+
 }

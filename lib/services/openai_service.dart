@@ -13,13 +13,13 @@ class OpenAIService {
     try {
       logger.info('Sending request to OpenAI API');
       final response = await http.post(
-        Uri.parse('$baseUrl/completions'),
+        Uri.parse('$baseUrl/chat/completions'),  // 여기를 수정했습니다. '/v1'을 제거했습니다.
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $apiKey',
         },
         body: jsonEncode({
-          'model': 'gpt-4o',
+          'model': 'gpt-4',  // 또는 'gpt-3.5-turbo'
           'messages': [
             {
               'role': 'system',
@@ -30,7 +30,7 @@ class OpenAIService {
               'content': prompt
             }
           ],
-          'max_tokens': 1000,
+          'max_tokens': 500,
         }),
       );
 

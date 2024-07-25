@@ -295,4 +295,30 @@ class ApiService {
       rethrow;
     }
   }
+
+  Future<List<Course>> getMyDrawnCourses(String userId) async {
+    logger.info('Fetching drawn courses for user ID: $userId');
+    try {
+      final response = await http.get(
+        Uri.parse('${AppConfig.apiBaseUrl}/courses/all_courses/$userId'),
+        headers: await _getHeaders(),
+      );
+
+      logger.info('Response status code: ${response.statusCode}');
+      logger.info('Response body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final List<dynamic> jsonData = json.decode(response.body);
+        final courses = jsonData.map((json) => Course.fromJson(json)).toList();
+        logger.info('Fetched ${courses.length} courses');
+        return courses;
+      } else {
+        logger.severe('Failed to load drawn courses: ${response.statusCode}');
+        throw Exception('Failed to load drawn courses');
+      }
+    } catch (e) {
+      logger.severe('Error fetching drawn courses: $e');
+      return [];
+    }
+  }
 }

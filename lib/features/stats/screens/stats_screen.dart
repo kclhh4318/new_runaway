@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import 'package:new_runaway/config/app_config.dart';
@@ -11,8 +12,11 @@ import 'package:new_runaway/features/stats/widgets/stats_bar_chart.dart';
 import 'package:new_runaway/features/running/running_provider.dart';
 import 'package:new_runaway/models/running_session.dart';
 import 'package:new_runaway/widgets/course_painter.dart';
+import '../../../models/course.dart';
+import '../../../services/auth_service.dart';
+import '../../../utils/logger.dart';
+import '../../onboarding/screens/start_page.dart';
 import 'all_runs_screen.dart';
-
 class StatsScreen extends StatefulWidget {
   const StatsScreen({Key? key}) : super(key: key);
 
@@ -25,6 +29,9 @@ class _StatsScreenState extends State<StatsScreen> {
   bool _showRunningButtons = true;
   String _selectedPeriod = '전체';
   DateTime _selectedDate = DateTime.now();
+  final StorageService _storageService = StorageService();
+  String? userId;
+  String _username = '';
 
   double _totalDistance = 0;
   int _totalDuration = 0;
@@ -33,13 +40,20 @@ class _StatsScreenState extends State<StatsScreen> {
   double _averageDistance = 0;
 
   final ApiService _apiService = ApiService();
-  final StorageService _storageService = StorageService();
 
   @override
   void initState() {
     super.initState();
     _scrollController.addListener(_scrollListener);
     _fetchStats();
+    _loadUserId();
+  }
+
+  Future<void> _loadUserId() async {
+    final id = await _storageService.getUserId();
+    setState(() {
+      userId = id;
+    });
   }
 
   void _scrollListener() {
@@ -93,33 +107,55 @@ class _StatsScreenState extends State<StatsScreen> {
     return Consumer<ApiService>(
       builder: (context, apiService, child) {
         return Scaffold(
+          appBar: AppBar(
+            title: Text('통계'),
+            backgroundColor: Colors.white,
+            foregroundColor: Colors.black,
+            actions: [
+              PopupMenuButton<String>(
+                onSelected: (value) async {
+                  if (value == 'logout') {
+                    await _logout();
+                  }
+                },
+                itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+                  PopupMenuItem<String>(
+                    value: 'profile',
+                    child: Text('프로필: $_username'),
+                  ),
+                  PopupMenuItem<String>(
+                    value: 'logout',
+                    child: Text('로그아웃'),
+                  ),
+                ],
+              ),
+            ],
+          ),
           backgroundColor: Colors.white,
           body: Stack(
             children: [
-              SafeArea(
-                child: CustomScrollView(
-                  controller: _scrollController,
-                  slivers: [
-                    SliverToBoxAdapter(child: _buildTotalStats()),
-                    SliverToBoxAdapter(
-                      child: PeriodSelector(
-                        initialPeriod: _selectedPeriod,
-                        onPeriodSelected: (period) {
-                          setState(() {
-                            _selectedPeriod = period;
-                            _fetchStats(); // 새로운 기간 선택 시 데이터 가져오기
-                          });
-                        },
-                      ),
+              CustomScrollView(
+                controller: _scrollController,
+                slivers: [
+                  SliverToBoxAdapter(child: _buildTotalStats()),
+                  SliverToBoxAdapter(
+                    child: PeriodSelector(
+                      initialPeriod: _selectedPeriod,
+                      onPeriodSelected: (period) {
+                        setState(() {
+                          _selectedPeriod = period;
+                          _fetchStats(); // 새로운 기간 선택 시 데이터 가져오기
+                        });
+                      },
                     ),
-                    if (_selectedPeriod != '전체' && _selectedPeriod != '주')
-                      SliverToBoxAdapter(child: _buildDateFilter()),
-                    SliverToBoxAdapter(child: _buildStatsChart()),
-                    SliverToBoxAdapter(child: _buildCourseStatistics()),
-                    SliverToBoxAdapter(child: _buildRecentRuns(context, apiService)),
-                    SliverToBoxAdapter(child: _buildMyDrawnCourses()),
-                  ],
-                ),
+                  ),
+                  if (_selectedPeriod != '전체' && _selectedPeriod != '주')
+                    SliverToBoxAdapter(child: _buildDateFilter()),
+                  SliverToBoxAdapter(child: _buildStatsChart()),
+                  SliverToBoxAdapter(child: _buildCourseStatistics()),
+                  SliverToBoxAdapter(child: _buildRecentRuns(context, apiService)),
+                  SliverToBoxAdapter(child: _buildMyDrawnCourses()),
+                ],
               ),
               _buildRunningButtons(),
             ],
@@ -313,6 +349,15 @@ class _StatsScreenState extends State<StatsScreen> {
     );
   }
 
+  Future<void> _logout() async {
+    final authService = Provider.of<AuthService>(context, listen: false);
+    await authService.logout();
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (context) => StartPage()),
+          (Route<dynamic> route) => false,
+    );
+  }
+
   Widget _buildCourseStatItem(String label, String value) {
     return Column(
       children: [
@@ -481,18 +526,39 @@ class _StatsScreenState extends State<StatsScreen> {
         children: [
           Text('내가 그린 코스', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           SizedBox(height: 10),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: List.generate(5, (index) => _buildCourseItem(index)),
-            ),
+          FutureBuilder<List<Course>>(
+            future: _apiService.getMyDrawnCourses(userId ?? ''),
+            builder: (context, snapshot) {
+              logger.info('Fetching drawn courses for user ID: $userId');
+
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return Center(child: CircularProgressIndicator());
+              } else if (snapshot.hasError) {
+                logger.severe('Error fetching drawn courses: ${snapshot.error}');
+                return Text('에러가 발생했습니다: ${snapshot.error}');
+              } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                logger.info('No drawn courses found for user ID: $userId');
+                return Text('아직 그린 코스가 없습니다.');
+              } else {
+                logger.info('Fetched ${snapshot.data!.length} drawn courses for user ID: $userId');
+                logger.info('Course IDs: ${snapshot.data!.map((c) => c.id).join(", ")}');
+                return SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: snapshot.data!.map((course) => _buildCourseItem(course)).toList(),
+                  ),
+                );
+              }
+            },
           ),
         ],
       ),
     );
   }
 
-  Widget _buildCourseItem(int index) {
+  Widget _buildCourseItem(Course course) {
+    List<LatLng> points = _convertToLatLngList(course.routeCoordinate);
+
     return Padding(
       padding: const EdgeInsets.only(right: 10.0),
       child: Column(
@@ -501,13 +567,20 @@ class _StatsScreenState extends State<StatsScreen> {
             width: 100,
             height: 100,
             decoration: BoxDecoration(
-              color: Colors.grey[300],
+              color: Colors.white,
               borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: Colors.blue),
             ),
+            child: points.isNotEmpty
+                ? CustomPaint(
+              painter: CoursePainter(points),
+              size: Size(100, 100),
+            )
+                : Center(child: Text('No route')),
           ),
           SizedBox(height: 5),
           Text(
-            '1111명',
+            '${course.recommendationCount ?? 0}명',
             style: TextStyle(
               fontSize: 10,
               fontWeight: FontWeight.normal,
@@ -621,6 +694,20 @@ class _StatsScreenState extends State<StatsScreen> {
     }
   }
 
+  List<LatLng> _convertToLatLngList(Map<String, dynamic>? routeCoordinate) {
+    if (routeCoordinate == null || !routeCoordinate.containsKey('coordinates')) {
+      return [];
+    }
+
+    List<dynamic> coordinates = routeCoordinate['coordinates'];
+    return coordinates.map((point) {
+      if (point is List && point.length >= 2) {
+        return LatLng(point[1], point[0]);
+      }
+      return LatLng(0, 0);
+    }).toList();
+  }
+
   Widget _buildErrorRecentRuns(String error) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -630,4 +717,3 @@ class _StatsScreenState extends State<StatsScreen> {
     );
   }
 }
-

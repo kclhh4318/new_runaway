@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:new_runaway/models/running_session.dart';
 import 'package:new_runaway/services/api_service.dart';
 import 'package:new_runaway/services/storage_service.dart';
-import 'package:new_runaway/features/courses/screens/course_drawing_screen.dart';
 import 'package:new_runaway/widgets/course_painter.dart';
 
 class AllRunsScreen extends StatefulWidget {

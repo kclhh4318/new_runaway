@@ -10,10 +10,7 @@ import 'package:new_runaway/features/courses/course_provider.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:new_runaway/features/running/screens/running_session_screen.dart';
 import 'package:new_runaway/features/running/running_provider.dart';
-
 import '../../../models/recommended_course.dart';
-import '../../../utils/logger.dart';
-import '../../../models/course.dart'; // 추가된 부분
 
 class CourseAnalysisResultScreen extends StatelessWidget {
   final logger = Logger('CourseAnalysisResultScreen');

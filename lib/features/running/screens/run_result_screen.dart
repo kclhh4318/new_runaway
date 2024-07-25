@@ -242,8 +242,6 @@ class _RunResultScreenState extends State<RunResultScreen> {
   }
 
   Future<void> _endRunningSession() async {
-    final Uint8List pngBytes = await _capturePng();
-    final imagePath = await saveImage(pngBytes, widget.sessionId);
     final sessionData = {
       "distance": widget.distance,
       "duration": widget.duration,

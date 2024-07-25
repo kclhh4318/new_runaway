@@ -148,33 +148,41 @@ class _CourseDrawingScreenState extends State<CourseDrawingScreen> {
             child: Column(
               children: [
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    ElevatedButton(
-                      onPressed: _toggleDrawingMode,
-                      style: ElevatedButton.styleFrom(
-                        foregroundColor: Color(0xFF0064FF),
-                        backgroundColor: Colors.white,
-                      ),
-                      child: Text(_isDrawingMode ? '드로잉 종료' : '드로잉 시작'),
-                    ),
-                    if (_isDrawingMode)
-                      ElevatedButton(
-                        onPressed: _clearDrawing,
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: _toggleDrawingMode,
                         style: ElevatedButton.styleFrom(
                           foregroundColor: Color(0xFF0064FF),
                           backgroundColor: Colors.white,
                         ),
-                        child: Text('다시 그리기'),
+                        child: Text(
+                            _isDrawingMode ? '드로잉 종료' : '드로잉 시작', style: TextStyle(fontSize: 10) // 원하는 폰트 크기로 변경
+                        ),
                       ),
-                    SizedBox(width: 24),
-                    ElevatedButton(
-                      onPressed: _finishDrawing,
-                      style: ElevatedButton.styleFrom(
-                        foregroundColor: Colors.white,
-                        backgroundColor: Color(0xFF0064FF),
+                    ),
+                    SizedBox(width: 8),
+                    if (_isDrawingMode)
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: _clearDrawing,
+                          style: ElevatedButton.styleFrom(
+                            foregroundColor: Color(0xFF0064FF),
+                            backgroundColor: Colors.white,
+                          ),
+                          child: Text('다시 그리기', style: TextStyle(fontSize: 10)),
+                        ),
                       ),
-                      child: Text('완료'),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: _finishDrawing,
+                        style: ElevatedButton.styleFrom(
+                          foregroundColor: Colors.white,
+                          backgroundColor: Color(0xFF0064FF),
+                        ),
+                        child: Text('완료'),
+                      ),
                     ),
                   ],
                 ),
@@ -328,7 +336,6 @@ class _CourseDrawingScreenState extends State<CourseDrawingScreen> {
 
     final courseProvider = Provider.of<CourseProvider>(context, listen: false);
 
-    // 로딩 다이얼로그 표시
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -347,13 +354,10 @@ class _CourseDrawingScreenState extends State<CourseDrawingScreen> {
 
     try {
       await courseProvider.analyzeAndRecommendCourse(_points);
-
-      // 로딩 다이얼로그 닫기
       Navigator.of(context).pop();
 
       final recommendedCourse = courseProvider.recommendedCourse;
       if (recommendedCourse != null) {
-        // 분석 결과 화면으로 이동
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -362,9 +366,7 @@ class _CourseDrawingScreenState extends State<CourseDrawingScreen> {
         );
       }
     } catch (e) {
-      // 로딩 다이얼로그 닫기
       Navigator.of(context).pop();
-
       ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('코스 분석에 실패했다모: $e')));
     }
