@@ -1,7 +1,7 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:http/http.dart' as http;
+import 'dart:convert';
 import 'package:new_runaway/config/app_config.dart';
 
 class StatsBarChart extends StatefulWidget {
@@ -32,16 +32,23 @@ class _StatsBarChartState extends State<StatsBarChart> {
   }
 
   Future<void> _fetchData() async {
+    final String endpoint = _getEndpoint(widget.selectedPeriod);
+    final String url = '${AppConfig.apiBaseUrl}/stats/$endpoint/${widget.userId}';
+    print('graph Fetching data from URL: $url'); // 디버깅용
+
     try {
-      final response = await http.get(
-        Uri.parse('${AppConfig.apiBaseUrl}/${_getEndpoint(widget.selectedPeriod)}/${widget.userId}'),
-      );
+      final response = await http.get(Uri.parse(url));
+      print('graph Response status: ${response.statusCode}'); // 디버깅용
 
       if (response.statusCode == 200) {
         final result = json.decode(response.body);
+        print('graph API Response: $result'); // 디버깅용
+
         setState(() {
-          _labels = List<String>.from(result['x']);
+          _labels = List<String>.from(result['x'].map((e) => e.toString()));
           _data = List<double>.from(result['y'].map((e) => e.toDouble()));
+          print('_labels: $_labels'); // 디버깅용
+          print('_data: $_data'); // 디버깅용
           _isLoading = false;
         });
       } else {
@@ -73,70 +80,85 @@ class _StatsBarChartState extends State<StatsBarChart> {
       return Center(child: CircularProgressIndicator());
     }
 
+    if (_data.isEmpty) {
+      return Center(child: Text('데이터가 없습니다.'));
+    }
+
     final double maxY = _data.isNotEmpty ? _data.reduce((a, b) => a > b ? a : b) : 0;
     final double interval = _calculateInterval(maxY);
 
-    return BarChart(
-      BarChartData(
-        alignment: BarChartAlignment.spaceAround,
-        maxY: maxY + interval,
-        barTouchData: BarTouchData(
-          touchTooltipData: BarTouchTooltipData(
-            tooltipBgColor: Colors.blueAccent,
-            getTooltipItem: (group, groupIndex, rod, rodIndex) {
-              return BarTooltipItem(
-                '${rod.toY.round()} km',
-                const TextStyle(color: Colors.white),
-              );
-            },
-          ),
-        ),
-        titlesData: FlTitlesData(
-          bottomTitles: AxisTitles(
-            sideTitles: SideTitles(
-              showTitles: true,
-              getTitlesWidget: (double value, TitleMeta meta) {
-                return Padding(
-                  padding: const EdgeInsets.only(top: 8.0),
-                  child: Text(
-                    _labels[value.toInt()],
-                    style: const TextStyle(
-                      color: Colors.black,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 10,
-                    ),
-                  ),
+    return Container(
+      height: 300,
+      child: BarChart(
+        BarChartData(
+          alignment: BarChartAlignment.spaceAround,
+          maxY: maxY + interval,
+          barTouchData: BarTouchData(
+            touchTooltipData: BarTouchTooltipData(
+              tooltipBgColor: Colors.blueAccent,
+              getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                return BarTooltipItem(
+                  '${rod.toY.round()} km',
+                  const TextStyle(color: Colors.white),
                 );
               },
-              reservedSize: 30,
             ),
           ),
-          leftTitles: AxisTitles(
-            sideTitles: SideTitles(
-              showTitles: true,
-              getTitlesWidget: (value, meta) {
-                if (value % interval == 0) {
-                  return Text(
-                    '${value.toInt()}km',
-                    style: TextStyle(fontSize: 8),
-                  );
-                }
-                return Text('');
-              },
-              reservedSize: 30,
-              interval: interval,
+          titlesData: FlTitlesData(
+            bottomTitles: AxisTitles(
+              sideTitles: SideTitles(
+                showTitles: true,
+                getTitlesWidget: (double value, TitleMeta meta) {
+                  final intValue = value.toInt();
+                  if (widget.selectedPeriod == '월' && intValue != 0 && intValue != 9 && intValue != 19) {
+                    return SizedBox.shrink(); // 빈 공간 반환
+                  }
+                  if (intValue < _labels.length) {
+                    return Padding(
+                      padding: const EdgeInsets.only(top: 8.0),
+                      child: Text(
+                        _labels[intValue],
+                        style: const TextStyle(
+                          color: Colors.black,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 10,
+                        ),
+                      ),
+                    );
+                  } else {
+                    return Text('');
+                  }
+                },
+                reservedSize: 30,
+              ),
             ),
+            leftTitles: AxisTitles(
+              sideTitles: SideTitles(
+                showTitles: true,
+                getTitlesWidget: (value, meta) {
+                  if (value % interval == 0) {
+                    return Text(
+                      '${value.toInt()}km',
+                      style: TextStyle(fontSize: 8),
+                    );
+                  }
+                  return Text('');
+                },
+                reservedSize: 30,
+                interval: interval,
+              ),
+            ),
+            topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+            rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
           ),
-          topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-        ),
-        borderData: FlBorderData(show: false),
-        barGroups: _getBarGroups(_data),
-        gridData: FlGridData(
-          show: true,
-          drawHorizontalLine: true,
-          horizontalInterval: interval,
-          drawVerticalLine: false,
+          borderData: FlBorderData(show: false),
+          barGroups: _getBarGroups(_data),
+          gridData: FlGridData(
+            show: true,
+            drawHorizontalLine: true,
+            horizontalInterval: interval,
+            drawVerticalLine: false,
+          ),
         ),
       ),
     );
@@ -165,5 +187,4 @@ class _StatsBarChartState extends State<StatsBarChart> {
     return 100;
   }
 }
-
 
