@@ -147,8 +147,8 @@ class _RunningSessionScreenState extends State<RunningSessionScreen> {
   Widget _buildPaceItem(String label, String value) {
     return Column(
       children: [
-        Text(label, style: TextStyle(color: Colors.white, fontSize: 16)),
-        Text(value, style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+        Text(label, style: TextStyle(color: Colors.black, fontSize: 16)),
+        Text(value, style: TextStyle(color: Colors.black, fontSize: 24, fontWeight: FontWeight.bold)),
       ],
     );
   }

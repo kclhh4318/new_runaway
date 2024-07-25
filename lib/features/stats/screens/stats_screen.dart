@@ -89,6 +89,7 @@ class _StatsScreenState extends State<StatsScreen> {
         foregroundColor: Colors.black,
         actions: [
           PopupMenuButton<String>(
+            color: Colors.white,
             onSelected: (value) {
               if (value == 'logout') {
                 _logout();
@@ -248,7 +249,7 @@ class _StatsScreenState extends State<StatsScreen> {
                 onPressed: () {
                   Navigator.push(context, MaterialPageRoute(builder: (context) => AllRunsScreen()));
                 },
-                child: Text('더보기'),
+                child: Text('더보기', style: TextStyle(color: Colors.black54),),
               ),
             ],
           ),

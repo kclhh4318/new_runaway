@@ -39,7 +39,7 @@ class _StartPageState extends State<StartPage> {
         children: [
           // 고정된 배경 이미지
           Image.asset(
-            "assets/images/onboarding_background.jpg",
+            "assets/images/onboarding_background.jpeg",
             fit: BoxFit.cover,
             width: double.infinity,
             height: double.infinity,
